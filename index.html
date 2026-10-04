@@ -32,6 +32,9 @@ td.n,th.n{text-align:end;font-variant-numeric:tabular-nums}tr.t td{font-weight:6
 nav{position:sticky;top:0;background:var(--bg);z-index:5}header h1{font-size:22px}
 #pv{display:none}#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
 @media print{#app,#toast{display:none!important}#pv{display:block}body{background:#fff}}
+
+#pv{--ink:#000;--mut:#444;--line:#999;--card:#fff;--ac:#000;--brass:#000;--bad:#a00;color:#000;font:13px/1.4 sans-serif}
+#pv .card{border:1px solid #999;padding:12px;margin:12px 0;page-break-inside:avoid;border-radius:0}
 </style></head><body><div class="wrap" id="app"></div><div id="pv"></div><div id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
@@ -88,7 +91,11 @@ item:['Barang/jasa','Item'],qty:['Jml','Qty'],price:['Harga','Price'],tax:['Paja
 company:['Nama usaha','Business name'],logo:['Logo','Logo'],invite:['Undang','Invite'],role:['Peran','Role'],pending:['menunggu','pending'],remove:['Hapus','Remove'],save:['Simpan','Save'],ws:['Nama buku','Book name'],
 ro:['Akun Anda hanya bisa melihat (viewer).','Your account is view-only (viewer).'],onlyowner:['Hanya owner yang bisa mengelola tim. Peran Anda:','Only the owner can manage the team. Your role:'],
 inve:['Undangan aktif saat orang itu masuk dengan email tersebut. Jalankan schema-v2.sql dulu.','The invite activates when that person signs in with that email. Run schema-v2.sql first.'],
-a2200:['Utang pajak','Tax payable'],google:['Masuk dengan Google','Continue with Google','使用 Google 登录','المتابعة عبر Google'],
+a2200:['Utang pajak','Tax payable'],prof:['Profil','Profile'],myprof:['Profil saya','My profile'],photo:['Ganti foto','Change photo'],pname:['Nama tampilan','Display name'],
+bprof:['Profil usaha (tampil di faktur dan laporan)','Business profile (shown on invoices and reports)'],addr:['Alamat','Address'],phone:['Telepon','Phone'],taxid:['No. pajak (NPWP/SSM)','Tax ID'],
+saved:['Tersimpan','Saved'],badimg:['Gambar tidak bisa dibaca. Coba JPG atau PNG.','Could not read the image. Try a JPG or PNG.'],profErr:['Profil belum tersimpan. Jalankan schema-v3.sql dulu.','Profile not saved. Run schema-v3.sql first.'],
+acctsec:['Keamanan akun','Account security'],npw:['Kata sandi baru','New password'],npw2:['Ulangi kata sandi','Repeat password'],chpw:['Ubah kata sandi','Change password'],outall:['Keluar dari semua perangkat','Sign out everywhere'],
+pwh:['Akun Google juga bisa membuat kata sandi di sini, agar bisa masuk dengan email. Minimal 8 karakter.','Google accounts can set a password here too, to sign in with email. Minimum 8 characters.'],pwmis:['Kata sandi tidak sama','Passwords do not match'],pwok:['Kata sandi diperbarui','Password updated'],google:['Masuk dengan Google','Continue with Google','使用 Google 登录','المتابعة عبر Google'],
 sent:['Cek email Anda untuk tautan konfirmasi/pemulihan.','Check your email for the confirmation/recovery link.','请查收邮件中的确认/恢复链接。','تحقق من بريدك للحصول على رابط التأكيد/الاستعادة.'],
 setpw:['Simpan kata sandi baru','Save new passphrase','保存新密码','حفظ العبارة الجديدة'],
 conf:['Isi SB_URL dan SB_KEY di index.html dengan data proyek Supabase Anda.','Set SB_URL and SB_KEY in index.html to your Supabase project values.','请在 index.html 中填写 Supabase 项目的 SB_URL 和 SB_KEY。','عيّن SB_URL و SB_KEY في index.html من مشروع Supabase.'],
@@ -97,7 +104,7 @@ a1100:['Kas & Bank','Cash & Bank','现金及银行','النقد والبنك'],a
 a2100:['Utang usaha','Accounts payable','应付账款','الذمم الدائنة'],a3100:['Modal pemilik','Owner capital','所有者资本','رأس المال'],
 a4100:['Pendapatan jasa','Service revenue','服务收入','إيرادات الخدمات'],a5100:['Beban gaji','Payroll expense','工资费用','مصروف الرواتب'],
 a5200:['Beban sewa','Rent expense','租金费用','مصروف الإيجار']};
-let sb,ws,ver=0,role='owner',rec=false,busy=false,msg='',li=0,st,disp='IDR',tab='dash',idle,fails=0,until=0;
+let me={},prof={},gm={},sb,ws,ver=0,role='owner',rec=false,busy=false,msg='',li=0,st,disp='IDR',tab='dash',idle,fails=0,until=0;
 const t=k=>{const a=S[k]||[k];return a[li]??a[1]??a[0]};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const b64=b=>{let s='';for(const x of new Uint8Array(b))s+=String.fromCharCode(x);return btoa(s)},ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -111,10 +118,10 @@ if(!r.data.length){const c=await sb.rpc('create_workspace',{n:'LedgerGuard'});if
 mem=r.data;let last='';try{last=localStorage.getItem('lgw')||''}catch(e){}
 const p=mem.find(x=>x.workspace_id===wid)||mem.find(x=>x.workspace_id===last)||mem[0];ws=p.workspace_id;role=p.role;try{localStorage.setItem('lgw',ws)}catch(e){}
 const{data:l,error:e2}=await sb.from('ledgers').select('data,version').eq('workspace_id',ws).single();if(e2)throw e2;
-const fresh=!Object.keys(l.data).length;st=fresh?seed():l.data;ver=l.version;st.rates.MYR??=3800;st.invoices??=[];
+const fresh=!Object.keys(l.data).length;st=fresh?seed():l.data;ver=l.version;st.invoices??=[];st.rules??=[];
 if(!st.accts.some(a=>a.c==='2200'))st.accts.push({c:'2200',y:'Li',n:''});
-if(fresh)await save();await autorun();msg='';ping();draw()}catch(e){st=null;msg=e.message;draw()}finally{busy=false}}
-const seed=()=>({rates:{IDR:1,MYR:3800,USD:16000,EUR:17500,SGD:12300,JPY:105,CNY:2250,SAR:4270},
+if(fresh)await save();await loadProfile();fixCur();await autorun();msg='';ping();draw()}catch(e){st=null;msg=e.message;draw()}finally{busy=false}}
+const seed=()=>({rates:{IDR:1,MYR:3800,USD:16000},
 accts:[['1100','A'],['1200','A'],['2100','Li'],['2200','Li'],['3100','E'],['4100','R'],['5100','X'],['5200','X']].map(([c,y])=>({c,y,n:''})),entries:[],rules:[],invoices:[]});
 const nm=a=>S['a'+a.c]?t('a'+a.c):a.n;
 const today=()=>new Date().toISOString().slice(0,10);
@@ -122,7 +129,8 @@ const addM=(d,m)=>{const x=new Date(d+'T00:00:00Z');x.setUTCMonth(x.getUTCMonth(
 async function post(date,desc,cur,lines,auto){if(role==='viewer'){toast(t('ro'));throw new Error('ro')}const prev=st.entries.length?st.entries.at(-1).hash:'0';const e={id:st.entries.length+1,date,desc,cur,rate:st.rates[cur],lines,auto:!!auto,prev};e.hash=await sha(prev+JSON.stringify([e.id,date,desc,cur,e.rate,lines]));st.entries.push(e)}
 async function autorun(){let n=0;for(const r of st.rules){while(r.next<=today()&&n++<120){await post(r.next,r.desc,r.cur,[{a:r.d,dr:r.amt,cr:0},{a:r.c,dr:0,cr:r.amt}],true);r.next=addM(r.next,r.every)}}if(n)await save()}
 const cfgOk=()=>SB_URL.startsWith('https://')&&SB_KEY.length>20&&window.supabase;
-async function boot(){if(!cfgOk()){draw();return}sb=supabase.createClient(SB_URL,SB_KEY);
+async function boot(){try{const p=JSON.parse(localStorage.getItem('lgp')||'{}');if(p.disp)disp=p.disp;if(Number.isInteger(p.li)&&p.li>=0&&p.li<4)li=p.li}catch(e){}
+if(!cfgOk()){draw();return}sb=supabase.createClient(SB_URL,SB_KEY);
 sb.auth.onAuthStateChange((ev,ses)=>{if(ev==='PASSWORD_RECOVERY'){rec=true;draw()}else if(ev==='SIGNED_OUT'){st=null;draw()}else if(ses&&!st&&!rec)setTimeout(load,0)});
 draw()}
 async function authGo(mode){const e=($('#em')||{}).value?.trim()||'',p=($('#pw')||{}).value||'',m=$('#m');m.textContent='';let r;
@@ -141,7 +149,7 @@ const conv=(v,from,to)=>v*st.rates[from]/st.rates[to];
 const fmt=(v,c=disp)=>{try{return new Intl.NumberFormat(LOC[li],{style:'currency',currency:c,currencyDisplay:'narrowSymbol'}).format(v)}catch(e){return v.toFixed(2)+' '+c}};
 function bals(){const b={};st.accts.forEach(a=>b[a.c]=0);st.entries.forEach(e=>e.lines.forEach(l=>b[l.a]+=(l.dr-l.cr)*e.rate));return b}
 const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}"${v===sel?' selected':''}>${esc(l)}</option>`).join('');
-const curs=()=>Object.keys(st.rates).map(c=>[c,c==='MYR'?'RM · MYR':c]);
+const curs=()=>Object.keys(st.rates).map(c=>[c,({MYR:'RM · MYR',USD:'US$ · USD',IDR:'Rp · IDR'})[c]||c]);
 const accOpts=()=>st.accts.map(a=>[a.c,a.c+' · '+nm(a)]);
 const tyOf=c=>(st.accts.find(a=>a.c===c)||{}).y;
 function bars(d){const W=560,H=170,m=Math.max(1,...d.flatMap(x=>[x.a,x.b])),w=W/d.length;
@@ -152,14 +160,14 @@ function dashboard(){const b=bals(),D=c=>conv(c,'IDR',disp),sm=y=>st.accts.filte
 const R=-sm('R'),X=sm('X'),mo=monthly().map(o=>({l:o.l,a:D(o.a),b:D(o.b),ci:D(o.ci),co:D(o.co)}));
 const k=(l,v,c='')=>`<div class="card kpi"><div class="mut">${l}</div><div class="big ${c}">${fmt(v)}</div></div>`;
 const lg=(a,b)=>`<p class="mut"><span style="color:var(--ac)">■</span> ${a} &nbsp; <span style="color:var(--brass)">■</span> ${b}</p>`;
-return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select onchange="disp=this.value;draw()">${opt(curs(),disp)}</select></label></div>
+return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select onchange="setDisp(this.value)">${opt(curs(),disp)}</select></label></div>
 <div class="grid">${k(t('a1100'),D(b['1100']||0))}${k(t('a1200'),D(b['1200']||0))}${k(t('R'),D(R))}${k(t('net'),D(R-X),R-X<0?'bad':'ok')}</div>
 <div class="grid"><div class="card"><h3>${t('rvx')}</h3>${bars(mo.map(o=>({l:o.l,a:o.a,b:o.b})))}${lg(t('R'),t('X'))}</div>
 <div class="card"><h3>${t('cf')}</h3>${bars(mo.map(o=>({l:o.l,a:o.ci,b:o.co})))}${lg(t('cin'),t('cout'))}</div></div>`}
 let glc='1100';
 function ledgerTab(){const a=st.accts.find(x=>x.c===glc)||st.accts[0],nat=a.y==='A'||a.y==='X'?1:-1;let run=0;
 const rows=st.entries.flatMap(e=>e.lines.filter(l=>l.a===a.c).map(l=>({e,l}))).map(({e,l})=>{const dv=conv(l.dr*e.rate,'IDR',disp),cv=conv(l.cr*e.rate,'IDR',disp);run+=nat*(dv-cv);return`<tr><td>#${e.id}</td><td>${esc(e.date)}</td><td>${esc(e.desc)}</td><td class="n">${dv?fmt(dv):''}</td><td class="n">${cv?fmt(cv):''}</td><td class="n">${fmt(run)}</td></tr>`}).join('');
-return`<div class="row" style="margin-bottom:16px"><label>${t('acct')}<select onchange="glc=this.value;draw()">${opt(accOpts(),a.c)}</select></label><label>${t('disp')}<select onchange="disp=this.value;draw()">${opt(curs(),disp)}</select></label></div><div class="card sc"><table><tr><th>#</th><th>${t('date')}</th><th>${t('desc')}</th><th class="n">${t('dr')}</th><th class="n">${t('cr')}</th><th class="n">${t('bal')}</th></tr>${rows}</table></div>`}
+return`<div class="row" style="margin-bottom:16px"><label>${t('acct')}<select onchange="glc=this.value;draw()">${opt(accOpts(),a.c)}</select></label><label>${t('disp')}<select onchange="setDisp(this.value)">${opt(curs(),disp)}</select></label></div><div class="card sc"><table><tr><th>#</th><th>${t('date')}</th><th>${t('desc')}</th><th class="n">${t('dr')}</th><th class="n">${t('cr')}</th><th class="n">${t('bal')}</th></tr>${rows}</table></div>`}
 function toast(m){const e=$('#toast');e.textContent=m;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,3000)}
 let mem=[];
 const wsSel=()=>mem.length>1?`<select aria-label="workspace" onchange="busy=false;load(this.value)">${mem.map(x=>`<option value="${esc(x.workspace_id)}"${x.workspace_id===ws?' selected':''}>${esc((x.workspaces&&x.workspaces.name)||'Buku')} (${esc(x.role)})</option>`).join('')}</select>`:'';
@@ -174,14 +182,45 @@ const{error}=await sb.from('invites').insert({workspace_id:ws,email:e,role:$('#i
 async function delInv(id){await sb.from('invites').delete().eq('id',id);teamLoad()}
 async function rmMem(u){await sb.from('members').delete().eq('workspace_id',ws).eq('user_id',u);teamLoad()}
 async function renWs(){const n=$('#wn').value.trim().slice(0,80);if(!n)return;await sb.from('workspaces').update({name:n}).eq('id',ws);const x=mem.find(x=>x.workspace_id===ws);if(x)x.workspaces={name:n};draw()}
-async function setCo(v){st.co=v.trim().slice(0,80);await save()}
-function setLogo(inp){const f=inp.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);im.onload=async()=>{const k=Math.min(1,240/im.width),c=document.createElement('canvas');c.width=Math.max(1,im.width*k);c.height=Math.max(1,im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);st.logo=c.toDataURL('image/jpeg',.8);URL.revokeObjectURL(u);await save();draw()};im.src=u}
+const dispName=()=>prof.name||gm.full_name||gm.name||me.email||'';
+const avSrc=()=>prof.avatar||gm.avatar_url||gm.picture||'';
+const avatarHtml=(n=32)=>{const a=avSrc();return a?`<img src="${esc(a)}" referrerpolicy="no-referrer" alt="" style="width:${n}px;height:${n}px;border-radius:50%;object-fit:cover">`:`<span style="width:${n}px;height:${n}px;border-radius:50%;background:var(--ac);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600">${esc((dispName()[0]||'?').toUpperCase())}</span>`};
+const meChip=()=>`<span style="display:inline-flex;align-items:center;gap:6px;cursor:pointer" onclick="tab='prof';draw()">${avatarHtml(30)}<span class="mut" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(dispName())}</span></span>`;
+const coBlock=()=>{const c=st.coInfo||{};return`<p><b>${esc(st.co||'')}</b><br>${esc(c.addr||'')}<br>${esc(c.phone||'')} ${esc(c.tax||'')}</p>`};
+function fixCur(){const u=new Set([...st.entries.map(e=>e.cur),...st.rules.map(r=>r.cur),...st.invoices.map(v=>v.cur)]);for(const c of Object.keys(st.rates))if(!['IDR','MYR','USD'].includes(c)&&!u.has(c))delete st.rates[c];st.rates.IDR=1;st.rates.MYR??=3800;st.rates.USD??=16000;if(!st.rates[disp])disp='IDR'}
+async function loadProfile(){try{const{data:u}=await sb.auth.getUser();const x=(u&&u.user)||{};me={id:x.id,email:x.email};gm=x.user_metadata||{};
+const{data}=await sb.from('profiles').select('name,avatar,prefs').eq('user_id',me.id).maybeSingle();
+if(data){prof=data;const p=data.prefs||{};if(p.disp)disp=p.disp;if(Number.isInteger(p.li)&&p.li>=0&&p.li<4)li=p.li}}catch(e){}}
+async function upProf(){const{error}=await sb.from('profiles').upsert({user_id:me.id,name:prof.name||null,avatar:prof.avatar||null,prefs:{disp,li},updated_at:new Date().toISOString()});if(error)toast(t('profErr'));return !error}
+function savePref(){try{localStorage.setItem('lgp',JSON.stringify({disp,li}))}catch(e){}if(sb&&me.id)upProf()}
+function setDisp(v){disp=v;savePref();draw()}
+function setLang(v){li=v;savePref();draw()}
+function shrink(f,max,sq,cb){if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
+im.onerror=()=>{URL.revokeObjectURL(u);toast(t('badimg'))};
+im.onload=()=>{const w=im.naturalWidth,h=im.naturalHeight,m=sq?Math.min(w,h):0,sx=sq?(w-m)/2:0,sy=sq?(h-m)/2:0,sw=sq?m:w,sh=sq?m:h,k=Math.min(1,max/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw*k));c.height=Math.max(1,Math.round(sh*k));const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);URL.revokeObjectURL(u);cb(c.toDataURL('image/jpeg',.85))};im.src=u}
+function setPhoto(inp){shrink(inp.files[0],160,true,async d=>{prof.avatar=d;if(await upProf())toast(t('saved'));draw()})}
+function setLogo(inp){shrink(inp.files[0],240,false,async d=>{st.logo=d;await save();toast(t('saved'));draw()})}
+async function saveProf(){prof.name=$('#pn').value.trim().slice(0,60);if(await upProf())toast(t('saved'));draw()}
+async function saveCo(){st.co=$('#cn').value.trim().slice(0,80);st.coInfo={addr:$('#ca').value.trim().slice(0,200),phone:$('#cp').value.trim().slice(0,40),tax:$('#ct').value.trim().slice(0,40)};await save();toast(t('saved'));draw()}
+function profileTab(){const c=st.coInfo||{},lg=st.logo&&st.logo.startsWith('data:image/')?`<img src="${esc(st.logo)}" alt="" style="max-height:64px;max-width:180px;border:1px solid var(--line);padding:4px;background:#fff">`:'';
+return`<div class="card"><h3>${t('myprof')}</h3><div class="row" style="align-items:center">${avatarHtml(72)}<div><label class="b g" style="display:inline-block;cursor:pointer">${t('photo')}<input type="file" accept="image/*" hidden onchange="setPhoto(this)"></label></div></div>
+<div class="row" style="margin-top:12px"><label>${t('pname')}<input id="pn" value="${esc(prof.name||gm.full_name||'')}"></label><label>${t('email')}<input value="${esc(me.email||'')}" disabled></label><button class="b" onclick="saveProf()">${t('save')}</button></div></div>
+<div class="card"><h3>${t('bprof')}</h3><div class="row" style="align-items:center">${lg}<div><label class="b g" style="display:inline-block;cursor:pointer">${t('logo')}<input type="file" accept="image/*" hidden onchange="setLogo(this)"></label></div></div>
+<div class="row" style="margin-top:12px"><label>${t('company')}<input id="cn" value="${esc(st.co||'')}"></label><label>${t('addr')}<input id="ca" value="${esc(c.addr||'')}"></label><label>${t('phone')}<input id="cp" value="${esc(c.phone||'')}"></label><label>${t('taxid')}<input id="ct" value="${esc(c.tax||'')}"></label><button class="b" onclick="saveCo()">${t('save')}</button></div></div>`}
+async function chPw(){const a=$('#np1').value,b=$('#np2').value,m=$('#pe');if(a.length<8){m.className='bad';m.textContent=t('short');return}if(a!==b){m.className='bad';m.textContent=t('pwmis');return}
+const{error}=await sb.auth.updateUser({password:a});m.className=error?'bad':'ok';m.textContent=error?error.message:t('pwok');if(!error){$('#np1').value='';$('#np2').value=''}}
+async function outAll(){await sb.auth.signOut({scope:'global'});st=null;draw()}
+function printReport(){const cards=[...document.querySelectorAll('#app .sc')].map(e=>e.parentElement.outerHTML).join(''),lg=st.logo&&st.logo.startsWith('data:image/')?`<img src="${esc(st.logo)}" style="max-height:60px;max-width:180px">`:'<span></span>';
+$('#pv').innerHTML=`<div style="padding:24px;max-width:800px;margin:auto"><div style="display:flex;justify-content:space-between;align-items:center">${lg}<div style="text-align:right"><b style="font-size:20px">${t('rep')}</b><br>${today()} · ${disp}</div></div>${coBlock()}${cards}</div>`;window.print()}
+const qq=x=>{x=String(x);if(/^[=+\-@]/.test(x))x="'"+x;return'"'+x.replace(/"/g,'""')+'"'};
+function exportTB(){const b=bals(),rows=[['code','name','debit','credit']];st.accts.forEach(a=>{const v=conv(b[a.c],'IDR',disp);rows.push([a.c,nm(a),v>0?v.toFixed(2):'',v<0?(-v).toFixed(2):''])});
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(qq).join(',')).join('\n')],{type:'text/csv'}));a.download='neraca-saldo-'+disp+'.csv';a.click()}
 function report(){const b=bals(),D=c=>conv(c,'IDR',disp);
 const sum=ty=>st.accts.filter(a=>a.y===ty).reduce((s,a)=>s+b[a.c],0);
 const A=sum('A'),Li=-sum('Li'),E=-sum('E'),R=-sum('R'),X=sum('X'),N=R-X;
 const tb=st.accts.map(a=>{const v=D(b[a.c]);return`<tr><td>${esc(a.c)}</td><td>${esc(nm(a))}</td><td class="n">${v>0?fmt(v):''}</td><td class="n">${v<0?fmt(-v):''}</td></tr>`}).join('');
 const sec=(ty,sg)=>st.accts.filter(a=>a.y===ty).map(a=>`<tr><td>${esc(nm(a))}</td><td class="n">${fmt(D(sg*b[a.c]))}</td></tr>`).join('');
-return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select onchange="disp=this.value;draw()">${opt(curs(),disp)}</select></label></div>
+return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select onchange="setDisp(this.value)">${opt(curs(),disp)}</select></label><button class="b g" onclick="printReport()">${t('print')}</button><button class="b g" onclick="exportTB()">CSV</button></div>
 <div class="grid"><div class="card"><div class="mut">${t('net')}</div><div class="big ${N<0?'bad':'ok'}">${fmt(D(N))}</div></div>
 <div class="card"><div class="mut">${t('A')}</div><div class="big">${fmt(D(A))}</div></div></div>
 <div class="grid"><div class="card"><h3>${t('is')}</h3><div class="sc"><table>${sec('R',-1)}${sec('X',1)}<tr class="t"><td>${t('net')}</td><td class="n">${fmt(D(N))}</td></tr></table></div></div>
@@ -190,7 +229,7 @@ return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select on
 <div class="card"><div class="row"><label>${t('code')}<input id="ac" size="6"></label><label>${t('name')}<input id="an"></label><label>${t('type')}<select id="ay">${opt(['A','Li','E','R','X'].map(k=>[k,t(k)]),'A')}</select></label><button class="b" onclick="addAcc()">${t('add')}</button></div></div>`}
 async function addAcc(){const c=$('#ac').value.trim(),n=$('#an').value.trim();if(!c||!n||st.accts.some(a=>a.c===c))return;st.accts.push({c,n,y:$('#ay').value});await save();draw()}
 function journal(){const rows=[...st.entries].reverse().map(e=>{const tot=e.lines.reduce((s,l)=>s+l.dr,0);return`<tr><td>#${e.id}</td><td>${esc(e.date)}</td><td>${esc(e.desc)}${e.auto?` <span class="mut">(${t('auto')})</span>`:''}</td><td>${e.lines.map(l=>esc(l.a)).join(', ')}</td><td class="n">${fmt(tot,e.cur)}</td><td><button class="b g" onclick="rev(${e.id})">${t('rev')}</button></td></tr>`}).join('');
-return`<div class="card"><div class="row"><label>${t('date')}<input type="date" id="jd" value="${today()}"></label><label>${t('desc')}<input id="jt"></label><label>${t('cur')}<select id="jc">${opt(curs(),'IDR')}</select></label></div>
+return`<div class="card"><div class="row"><label>${t('date')}<input type="date" id="jd" value="${today()}"></label><label>${t('desc')}<input id="jt"></label><label>${t('cur')}<select id="jc">${opt(curs(),disp)}</select></label></div>
 <div id="jl" style="margin:12px 0">${jrow('1100')}${jrow('4100')}</div>
 <div class="row"><button class="b g" onclick="$('#jl').insertAdjacentHTML('beforeend',jrow());jbal()">+ ${t('line')}</button><button class="b" onclick="addJ()">${t('post')}</button><span id="jb" class="mut"></span></div><p class="bad" id="je"></p></div>
 <div class="card sc"><table><tr><th>#</th><th>${t('date')}</th><th>${t('desc')}</th><th>${t('acct')}</th><th class="n">${t('amt')}</th><th></th></tr>${rows}</table></div>`}
@@ -201,7 +240,7 @@ async function addJ(){const q=jlines(),d=q.reduce((s,l)=>s+l.dr,0),c=q.reduce((s
 await post($('#jd').value||today(),$('#jt').value.trim().slice(0,120)||'-',$('#jc').value,q);await save();draw()}
 async function rev(id){const e=st.entries.find(x=>x.id===id);await post(today(),'↩ #'+id+' '+e.desc,e.cur,e.lines.map(l=>({a:l.a,dr:l.cr,cr:l.dr})));st.entries.at(-1).rate=e.rate;await save();draw()}
 function invoices(){const rows=st.invoices.map((v,i)=>`<tr><td>${esc(v.no||'#'+v.n)}</td><td>${esc(v.who)}</td><td>${esc(v.due||'')}</td><td class="n">${fmt(v.total||v.amt,v.cur)}</td><td>${v.paid?`<span class="ok">${t('paid')}</span>`:`<button class="b g" onclick="payInv(${i})">${t('mark')}</button>`} <button class="b g" onclick="printInv(${i})">${t('print')}</button></td></tr>`).reverse().join('');
-return`<div class="card"><div class="row"><label>${t('who')}<input id="iw"></label><label>${t('cur')}<select id="ic">${opt(curs(),'IDR')}</select></label><label>${t('due')}<input id="idu" type="date" value="${addM(today(),1)}"></label><label>${t('tax')}<input id="itx" type="number" min="0" max="100" step="any" value="0" style="width:80px"></label></div>
+return`<div class="card"><div class="row"><label>${t('who')}<input id="iw"></label><label>${t('cur')}<select id="ic">${opt(curs(),disp)}</select></label><label>${t('due')}<input id="idu" type="date" value="${addM(today(),1)}"></label><label>${t('tax')}<input id="itx" type="number" min="0" max="100" step="any" value="0" style="width:80px"></label></div>
 <div id="il" style="margin:12px 0">${irow()}</div><div class="row"><button class="b g" onclick="$('#il').insertAdjacentHTML('beforeend',irow())">+ ${t('line')}</button><button class="b" onclick="addInv()">${t('add')}</button></div></div><div class="card sc"><table>${rows}</table></div>`}
 const irow=()=>`<div class="row ir" style="margin-bottom:6px"><input class="id" placeholder="${t('item')}" style="flex:1;min-width:140px"><input class="iq" type="number" min="0" step="any" value="1" style="width:70px"><input class="ip" type="number" min="0" step="any" placeholder="${t('price')}" style="width:130px"></div>`;
 function ilines(){return[...document.querySelectorAll('.ir')].map(r=>({d:r.querySelector('.id').value.trim().slice(0,100),q:parseFloat(r.querySelector('.iq').value)||0,p:parseFloat(r.querySelector('.ip').value)||0})).filter(x=>x.q>0&&x.p>0)}
@@ -211,8 +250,8 @@ const q=[{a:'1200',dr:total,cr:0},{a:'4100',dr:0,cr:sub}];if(tax)q.push({a:'2200
 await post(today(),no+' '+w,c,q);st.invoices.push({n,no,who:w,items:it,tax:tx,sub,taxAmt:tax,total,cur:c,date:today(),due:$('#idu').value,paid:false});await save();draw()}
 async function payInv(i){const v=st.invoices[i];if(v.paid)return;const a=v.total||v.amt;await post(today(),'PAY '+(v.no||'#'+v.n)+' '+v.who,v.cur,[{a:'1100',dr:a,cr:0},{a:'1200',dr:0,cr:a}]);v.paid=true;await save();draw()}
 function printInv(i){const v=st.invoices[i],it=v.items||[{d:v.who,q:1,p:v.amt}],f=x=>fmt(x,v.cur),bd='border-bottom:1px solid #000',lg=st.logo&&st.logo.startsWith('data:image/')?`<img src="${esc(st.logo)}" style="max-height:70px;max-width:200px">`:'<span></span>';
-$('#pv').innerHTML=`<div style="font:14px/1.5 sans-serif;color:#000;padding:24px;max-width:720px;margin:auto"><div style="display:flex;justify-content:space-between;align-items:center">${lg}<div style="text-align:right"><b style="font-size:22px">INVOICE</b><br>${esc(v.no||'#'+v.n)}</div></div><p><b>${esc(st.co||'')}</b></p><p>${t('who')}: <b>${esc(v.who)}</b><br>${t('date')}: ${esc(v.date||'')}<br>${t('due')}: ${esc(v.due||'')}</p><table style="width:100%;border-collapse:collapse"><tr><th style="text-align:left;${bd}">${t('item')}</th><th style="${bd}">${t('qty')}</th><th style="text-align:right;${bd}">${t('price')}</th><th style="text-align:right;${bd}">${t('amt')}</th></tr>${it.map(x=>`<tr><td>${esc(x.d)}</td><td align="center">${x.q}</td><td align="right">${f(x.p)}</td><td align="right">${f(x.q*x.p)}</td></tr>`).join('')}</table><p style="text-align:right">${t('sub')}: ${f(v.sub||v.amt)}<br>${t('tax')} ${v.tax||0}: ${f(v.taxAmt||0)}<br><b>${t('tot')}: ${f(v.total||v.amt)}</b></p></div>`;window.print()}
-function bank(){return`<div class="card"><p class="mut">${t('bankh')}</p><div class="row"><label>${t('cur')}<select id="bc">${opt(curs(),'IDR')}</select></label><button class="b" onclick="recon()">${t('run')}</button></div><p><textarea id="bt" rows="6" style="width:100%;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line)"></textarea></p><div id="br" class="sc"></div></div>`}
+$('#pv').innerHTML=`<div style="font:14px/1.5 sans-serif;color:#000;padding:24px;max-width:720px;margin:auto"><div style="display:flex;justify-content:space-between;align-items:center">${lg}<div style="text-align:right"><b style="font-size:22px">INVOICE</b><br>${esc(v.no||'#'+v.n)}</div></div>${coBlock()}<p>${t('who')}: <b>${esc(v.who)}</b><br>${t('date')}: ${esc(v.date||'')}<br>${t('due')}: ${esc(v.due||'')}</p><table style="width:100%;border-collapse:collapse"><tr><th style="text-align:left;${bd}">${t('item')}</th><th style="${bd}">${t('qty')}</th><th style="text-align:right;${bd}">${t('price')}</th><th style="text-align:right;${bd}">${t('amt')}</th></tr>${it.map(x=>`<tr><td>${esc(x.d)}</td><td align="center">${x.q}</td><td align="right">${f(x.p)}</td><td align="right">${f(x.q*x.p)}</td></tr>`).join('')}</table><p style="text-align:right">${t('sub')}: ${f(v.sub||v.amt)}<br>${t('tax')} ${v.tax||0}: ${f(v.taxAmt||0)}<br><b>${t('tot')}: ${f(v.total||v.amt)}</b></p></div>`;window.print()}
+function bank(){return`<div class="card"><p class="mut">${t('bankh')}</p><div class="row"><label>${t('cur')}<select id="bc">${opt(curs(),disp)}</select></label><button class="b" onclick="recon()">${t('run')}</button></div><p><textarea id="bt" rows="6" style="width:100%;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line)"></textarea></p><div id="br" class="sc"></div></div>`}
 function recon(){const cur=$('#bc').value,used=new Set();const cands=st.entries.filter(e=>e.cur===cur).map(e=>({e,v:e.lines.filter(l=>l.a==='1100').reduce((s,l)=>s+l.dr-l.cr,0)})).filter(x=>x.v);
 const out=$('#bt').value.split('\n').map(x=>x.trim()).filter(Boolean).map(ln=>{const p=ln.split(','),a=parseFloat(p[p.length-1]),d=p.slice(0,-1).join(',');const i=cands.findIndex((c,j)=>!used.has(j)&&Math.abs(c.v-a)<0.005);if(i>=0)used.add(i);return`<tr><td>${esc(d)}</td><td class="n">${isNaN(a)?'?':fmt(a,cur)}</td><td class="${i>=0?'ok':'bad'}">${i>=0?t('match')+' #'+cands[i].e.id:t('unm')}</td></tr>`}).join('');
 $('#br').innerHTML=`<table>${out}</table>`}
@@ -220,23 +259,23 @@ function exportCsv(){const q=x=>{x=String(x);if(/^[=+\-@]/.test(x))x="'"+x;retur
 const rows=[['id','date','desc','currency','rate','account','debit','credit']];st.entries.forEach(e=>e.lines.forEach(l=>rows.push([e.id,e.date,e.desc,e.cur,e.rate,l.a,l.dr,l.cr])));
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'}));a.download='jurnal.csv';a.click()}
 function auto(){const rows=st.rules.map((r,i)=>`<tr><td>${esc(r.desc)}</td><td>${esc(r.d)} → ${esc(r.c)}</td><td class="n">${fmt(r.amt,r.cur)}</td><td>${r.every}</td><td>${esc(r.next)}</td><td><button class="b g" onclick="delR(${i})">×</button></td></tr>`).join('');
-return`<div class="card"><h3>${t('rules')}</h3><p class="mut">${t('ruleh')}</p><div class="row"><label>${t('desc')}<input id="rt"></label><label>${t('dr')}<select id="rd">${opt(accOpts(),'5200')}</select></label><label>${t('cr')}<select id="rc">${opt(accOpts())}</select></label><label>${t('amt')}<input id="ra" type="number" min="0" step="any" style="width:120px"></label><label>${t('cur')}<select id="rcu">${opt(curs(),'IDR')}</select></label><label>${t('every')}<input id="re" type="number" min="1" value="1" style="width:80px"></label><label>${t('first')}<input id="rf" type="date" value="${today()}"></label><button class="b" onclick="addR()">${t('add')}</button></div></div>
+return`<div class="card"><h3>${t('rules')}</h3><p class="mut">${t('ruleh')}</p><div class="row"><label>${t('desc')}<input id="rt"></label><label>${t('dr')}<select id="rd">${opt(accOpts(),'5200')}</select></label><label>${t('cr')}<select id="rc">${opt(accOpts())}</select></label><label>${t('amt')}<input id="ra" type="number" min="0" step="any" style="width:120px"></label><label>${t('cur')}<select id="rcu">${opt(curs(),disp)}</select></label><label>${t('every')}<input id="re" type="number" min="1" value="1" style="width:80px"></label><label>${t('first')}<input id="rf" type="date" value="${today()}"></label><button class="b" onclick="addR()">${t('add')}</button></div></div>
 <div class="card sc"><table>${rows}</table></div>`}
 async function addR(){const a=parseFloat($('#ra').value),d=$('#rd').value,c=$('#rc').value;if(!(a>0)||d===c)return;st.rules.push({desc:$('#rt').value.trim().slice(0,120)||'-',d,c,amt:a,cur:$('#rcu').value,every:Math.max(1,parseInt($('#re').value)||1),next:$('#rf').value||today()});await autorun();await save();draw()}
 async function delR(i){st.rules.splice(i,1);await save();draw()}
-function settings(){return`<div class="card"><div class="row"><label>${t('company')}<input value="${esc(st.co||'')}" onchange="setCo(this.value)"></label><label>${t('logo')}<input type="file" accept="image/*" onchange="setLogo(this)"></label></div></div><div class="card"><h3>${t('set')}</h3><p>${t('sec')}</p><div class="row"><button class="b" onclick="verify()">${t('verify')}</button><button class="b g" onclick="exportCsv()">${t('exp')}</button><button class="b g" onclick="wipe()">${t('wipe')}</button></div><p id="vr"></p></div>
+function settings(){return`<div class="card"><h3>${t('acctsec')}</h3><div class="row"><label>${t('npw')}<input id="np1" type="password" autocomplete="new-password"></label><label>${t('npw2')}<input id="np2" type="password" autocomplete="new-password"></label><button class="b" onclick="chPw()">${t('chpw')}</button><button class="b g" onclick="outAll()">${t('outall')}</button></div><p class="mut">${t('pwh')}</p><p id="pe"></p></div><div class="card"><h3>${t('set')}</h3><p>${t('sec')}</p><div class="row"><button class="b" onclick="verify()">${t('verify')}</button><button class="b g" onclick="exportCsv()">${t('exp')}</button><button class="b g" onclick="wipe()">${t('wipe')}</button></div><p id="vr"></p></div>
 <div class="card"><h3>${t('rate')}</h3><div class="row">${Object.keys(st.rates).filter(c=>c!=='IDR').map(c=>`<label>${c}<input type="number" min="0" step="any" value="${st.rates[c]}" style="width:110px" onchange="setRate('${c}',this.value)"></label>`).join('')}</div></div>`}
 async function setRate(c,v){v=parseFloat(v);if(v>0){st.rates[c]=v;await save()}}
 async function verify(){let prev='0';for(const e of st.entries){const h=await sha(prev+JSON.stringify([e.id,e.date,e.desc,e.cur,e.rate,e.lines]));if(e.prev!==prev||e.hash!==h){$('#vr').innerHTML=`<span class="bad">${t('tamp')}${e.id}</span>`;return}prev=e.hash}
 $('#vr').innerHTML=`<span class="ok">${t('good')} ${st.entries.length}</span>`}
 async function wipe(){if(confirm('?')){st=seed();await save();draw()}}
 function draw(){document.documentElement.lang=L[li];document.documentElement.dir=li===3?'rtl':'ltr';
-const sel=`<select aria-label="language" onchange="li=+this.value;draw()">${[['0','Indonesia'],['1','English'],['2','中文'],['3','العربية']].map(([v,l])=>`<option value="${v}"${+v===li?' selected':''}>${l}</option>`).join('')}</select>`;
+const sel=`<select aria-label="language" onchange="setLang(+this.value)">${[['0','Indonesia'],['1','English'],['2','中文'],['3','العربية']].map(([v,l])=>`<option value="${v}"${+v===li?' selected':''}>${l}</option>`).join('')}</select>`;
 if(!st){const bt=(m,l,c='')=>`<button class="b ${c}" onclick="authGo('${m}')">${t(l)}</button>`;
 const body=!cfgOk()?`<p class="bad">${t('conf')}</p>`:rec?`<div class="row" style="flex-direction:column;align-items:stretch"><input id="pw" type="password" autocomplete="new-password" placeholder="${esc(t('newpw'))}"></div><p>${bt('n','setpw')}</p>`
 :`<p>${bt('g','google')}</p><div class="row" style="flex-direction:column;align-items:stretch"><input id="em" type="email" autocomplete="email" placeholder="${esc(t('email'))}"><input id="pw" type="password" autocomplete="current-password" placeholder="${esc(t('pw'))}" onkeydown="if(event.key==='Enter')authGo('in')"></div><p>${bt('in','signin')} ${bt('up','signup','g')} ${bt('f','forgot','g')}</p>`;
 $('#app').innerHTML=`<div class="card" id="lock"><h1>LedgerGuard</h1><p class="mut">${t('sub')}</p>${body}<p class="bad" id="m">${esc(msg)}</p><div>${sel}</div></div>`;return}
-const v={dash:dashboard,rep:report,gl:ledgerTab,jrn:journal,inv:invoices,bank:bank,aut:auto,team:teamTab,set:settings}[tab]();
-$('#app').innerHTML=`<header><h1 style="margin:0;display:flex;gap:8px;align-items:center"><svg width="26" height="26" viewBox="0 0 26 26"><rect width="26" height="26" rx="5" fill="var(--ac)"/><path d="M7 8h12M7 13h12M7 18h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>LedgerGuard</h1><div class="row">${wsSel()}${sel}<button class="b g" onclick="lockNow()">${t('lock')}</button></div></header><nav>${['dash','rep','gl','jrn','inv','bank','aut','team','set'].map(k=>`<button class="${k===tab?'on':''}" onclick="tab='${k}';draw()">${t(k)}</button>`).join('')}</nav>${v}`;if(tab==='team')teamLoad()}
+const v={dash:dashboard,rep:report,gl:ledgerTab,jrn:journal,inv:invoices,bank:bank,aut:auto,team:teamTab,prof:profileTab,set:settings}[tab]();
+$('#app').innerHTML=`<header><h1 style="margin:0;display:flex;gap:8px;align-items:center"><svg width="26" height="26" viewBox="0 0 26 26"><rect width="26" height="26" rx="5" fill="var(--ac)"/><path d="M7 8h12M7 13h12M7 18h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>LedgerGuard</h1><div class="row">${meChip()}${wsSel()}${sel}<button class="b g" onclick="lockNow()">${t('lock')}</button></div></header><nav>${['dash','rep','gl','jrn','inv','bank','aut','team','prof','set'].map(k=>`<button class="${k===tab?'on':''}" onclick="tab='${k}';draw()">${t(k)}</button>`).join('')}</nav>${v}`;if(tab==='team')teamLoad()}
 boot();
 </script></body></html>
