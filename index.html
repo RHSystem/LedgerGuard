@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LedgerGuard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f1;--card:#fff;--ink:#1c2b22;--mut:#5d6d62;--line:#dbe4d8;--ac:#1f5c3d;--brass:#a8832f;--bad:#a63d2f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a15;--card:#1a251e;--ink:#e6efe8;--mut:#9bad9f;--line:#2b3a30;--ac:#5fb98a;--brass:#d2ad57;--bad:#e27a6a}}
+:root[data-theme="dark"]{--bg:#121a15;--card:#1a251e;--ink:#e6efe8;--mut:#9bad9f;--line:#2b3a30;--ac:#5fb98a;--brass:#d2ad57;--bad:#e27a6a}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'IBM Plex Sans',system-ui,sans-serif}
+h1,h2,h3{font-family:'Source Serif 4',Georgia,serif;margin:0 0 .5em}
+.wrap{max-width:960px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+nav{display:flex;gap:4px;overflow-x:auto;border-bottom:2px solid var(--line);margin-bottom:16px}
+nav button{background:none;border:0;padding:10px 14px;color:var(--mut);cursor:pointer;font:inherit;border-bottom:3px solid transparent;margin-bottom:-2px}
+nav button.on{color:var(--ac);border-color:var(--brass);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px}
+input,select,button.b{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink);min-width:0}
+button.b{background:var(--ac);color:#fff;border-color:var(--ac);cursor:pointer}button.b.g{background:none;color:var(--ac)}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:end}.row>label{display:flex;flex-direction:column;font-size:13px;color:var(--mut);gap:2px}
+.sc{overflow-x:auto}table{width:100%;border-collapse:collapse}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:start;white-space:nowrap}
+td.n,th.n{text-align:end;font-variant-numeric:tabular-nums}tr.t td{font-weight:600;border-top:2px solid var(--ink)}
+.mut{color:var(--mut)}.bad{color:var(--bad)}.ok{color:var(--ac)}
+.big{font-family:'Source Serif 4',Georgia,serif;font-size:30px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+#lock{max-width:380px;margin:12vh auto}
+
+.kpi{border-top:3px solid var(--brass)}.kpi .big{font-size:26px;margin-top:4px}
+nav{position:sticky;top:0;background:var(--bg);z-index:5}header h1{font-size:22px}
+#pv{display:none}#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+@media print{#app,#toast{display:none!important}#pv{display:block}body{background:#fff}}
+</style></head><body><div class="wrap" id="app"></div><div id="pv"></div><div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SB_URL='https://uywzbcypouudfwncrkhm.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5d3piY3lwb3V1ZGZ3bmNya2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzExMTIsImV4cCI6MjEwNjYwNzExMn0.ISVi512gx7QysRNqx5xZkE1qrO6Enq0EZGVdQJCQ47I',RED=location.origin+location.pathname;
+const $=s=>document.querySelector(s),enc=new TextEncoder(),dec=new TextDecoder();
+const L=['id','en','zh','ar'],LOC=['id-ID','en-US','zh-CN','ar'];
+const S={
+sub:['Pembukuan multi-pengguna yang aman','Secure multi-user bookkeeping','安全的多用户账簿','دفاتر آمنة متعددة المستخدمين'],
+pw:['Kata sandi (min. 8 karakter)','Passphrase (min. 8 characters)','密码（至少8位）','عبارة المرور (8 أحرف على الأقل)'],
+open:['Buka atau buat brankas','Unlock or create vault','解锁或创建保险库','فتح أو إنشاء الخزنة'],
+short:['Minimal 8 karakter','Minimum 8 characters','至少8个字符','8 أحرف على الأقل'],
+wrong:['Kata sandi salah. Coba lagi dalam (detik):','Wrong passphrase. Retry in (s):','密码错误。请在（秒）后重试：','عبارة خاطئة. أعد المحاولة بعد (ثانية):'],
+lock:['Kunci','Lock','锁定','قفل'],
+rep:['Laporan','Reports','报表','التقارير'],jrn:['Jurnal','Journal','日记账','اليومية'],
+aut:['Otomatis','Automation','自动化','الأتمتة'],set:['Keamanan','Security','安全','الأمان'],
+date:['Tanggal','Date','日期','التاريخ'],desc:['Keterangan','Description','摘要','البيان'],
+dr:['Debit','Debit','借','مدين'],cr:['Kredit','Credit','贷','دائن'],amt:['Jumlah','Amount','金额','المبلغ'],
+cur:['Mata uang','Currency','币种','العملة'],disp:['Tampilkan dalam','Show in','显示币种','عرض بـ'],
+post:['Catat jurnal','Post entry','记账','تسجيل القيد'],rev:['Balik','Reverse','冲销','عكس'],
+tb:['Neraca saldo','Trial balance','试算平衡表','ميزان المراجعة'],is:['Laba rugi','Income statement','利润表','قائمة الدخل'],
+bs:['Posisi keuangan','Balance sheet','资产负债表','المركز المالي'],net:['Laba bersih','Net income','净利润','صافي الدخل'],
+A:['Aset','Assets','资产','الأصول'],Li:['Liabilitas','Liabilities','负债','الخصوم'],E:['Ekuitas','Equity','权益','حقوق الملكية'],
+R:['Pendapatan','Revenue','收入','الإيرادات'],X:['Beban','Expenses','费用','المصروفات'],
+tot:['Total','Total','合计','المجموع'],code:['Kode','Code','编号','الرمز'],name:['Nama akun','Account name','账户名称','اسم الحساب'],
+type:['Jenis','Type','类型','النوع'],add:['Tambah','Add','添加','إضافة'],
+rate:['Kurs ke mata uang dasar (IDR)','Rate to base currency (IDR)','兑基础货币(IDR)汇率','السعر مقابل العملة الأساسية (IDR)'],
+every:['Ulangi tiap (bulan)','Repeat every (months)','每隔（月）','كل (شهر)'],first:['Mulai','Start','开始','البداية'],
+rules:['Aturan jurnal berulang','Recurring rules','定期分录规则','قواعد متكررة'],
+ruleh:['Aturan jatuh tempo dicatat otomatis setiap kali brankas dibuka.','Due rules post automatically each time the vault opens.','到期规则在每次打开保险库时自动记账。','تُسجَّل القواعد المستحقة تلقائيًا عند كل فتح للخزنة.'],
+verify:['Verifikasi rantai audit','Verify audit chain','验证审计链','التحقق من سلسلة التدقيق'],
+good:['Rantai utuh:','Chain intact:','链完整：','السلسلة سليمة:'],tamp:['Perubahan terdeteksi pada entri #','Tampering found at entry #','在分录 #发现篡改','تم اكتشاف تلاعب في القيد #'],
+wipe:['Hapus semua data','Erase all data','清除所有数据','محو كل البيانات'],
+sec:['Masuk lewat Google atau email terverifikasi. Data disimpan di Supabase dengan Row Level Security: tiap pengguna hanya melihat buku miliknya. Otomatis keluar setelah 5 menit tidak aktif. Jurnal tidak bisa diubah; koreksi lewat jurnal balik.','Sign in with Google or a verified email. Data lives in Supabase with Row Level Security: each user sees only their own books. Auto sign-out after 5 idle minutes. Entries are immutable; correct them with reversals.','通过 Google 或已验证邮箱登录。数据存于启用行级安全的 Supabase：用户只能看到自己的账簿。闲置5分钟自动退出。分录不可修改，请用冲销更正。','سجّل الدخول عبر Google أو بريد موثّق. البيانات في Supabase بأمان على مستوى الصفوف: يرى كل مستخدم دفاتره فقط. خروج تلقائي بعد 5 دقائق خمول. القيود غير قابلة للتعديل وتُصحَّح بالعكس.'],
+unb:['Debit dan kredit harus berbeda dan jumlah > 0','Debit and credit must differ and amount must be > 0','借贷科目须不同且金额 > 0','يجب اختلاف المدين والدائن والمبلغ > 0'],
+auto:['otomatis','auto','自动','تلقائي'],
+email:['Email','Email','邮箱','البريد الإلكتروني'],bademail:['Format email tidak valid','Invalid email','邮箱格式无效','بريد غير صالح'],
+exists:['Email sudah terdaftar di perangkat ini','Email already registered on this device','该邮箱已在此设备注册','البريد مسجّل على هذا الجهاز'],
+noacct:['Akun tidak ditemukan','Account not found','未找到账户','الحساب غير موجود'],
+signin:['Masuk','Sign in','登录','دخول'],signup:['Daftar','Sign up','注册','تسجيل'],
+forgot:['Lupa kata sandi?','Forgot passphrase?','忘记密码？','نسيت العبارة؟'],back:['Kembali','Back','返回','رجوع'],
+recover:['Pulihkan akses','Recover access','恢复访问','استعادة الوصول'],rkey:['Kunci pemulihan','Recovery key','恢复密钥','مفتاح الاستعادة'],
+rkh:['Simpan kunci ini di tempat aman. Hanya ini yang bisa memulihkan data jika kata sandi lupa, dan tidak akan ditampilkan lagi.','Store this key safely. It is the only way to recover your data if you forget your passphrase, and it will not be shown again.','请妥善保存此密钥。忘记密码时只有它能恢复数据，且不会再次显示。','احفظ هذا المفتاح. هو الوسيلة الوحيدة لاستعادة بياناتك ولن يُعرض مجددًا.'],
+rkok:['Sudah saya simpan','I saved it','我已保存','لقد حفظته'],newpw:['Kata sandi baru','New passphrase','新密码','عبارة جديدة'],
+gnote:['Verifikasi Google butuh server dan belum aktif; email di sini hanya label brankas lokal.','Google verification needs a server and is not active; email here only labels a local vault.','Google 验证需要服务器，尚未启用；此处邮箱仅用于标记本地保险库。','التحقق عبر Google يتطلب خادمًا وغير مفعّل؛ البريد هنا مجرد تسمية للخزنة المحلية.'],
+inv:['Faktur','Invoices','发票','الفواتير'],who:['Pelanggan','Customer','客户','العميل'],due:['Jatuh tempo','Due','到期','الاستحقاق'],
+paid:['Lunas','Paid','已付','مدفوعة'],mark:['Tandai lunas','Mark paid','标记已付','تحديد كمدفوعة'],
+bank:['Rekonsiliasi','Reconcile','对账','التسوية'],bankh:['Tempel mutasi bank, satu baris per transaksi: tanggal,keterangan,jumlah (masuk +, keluar −).','Paste bank lines, one per transaction: date,description,amount (in +, out −).','粘贴银行流水，每行一笔：日期,摘要,金额（收入+，支出−）。','الصق حركات البنك، سطر لكل عملية: التاريخ,البيان,المبلغ (وارد +، صادر −).'],
+run:['Cocokkan','Match','匹配','مطابقة'],match:['Cocok dengan jurnal','Matches entry','匹配分录','مطابق للقيد'],unm:['Belum cocok','Unmatched','未匹配','غير مطابق'],
+exp:['Ekspor CSV jurnal','Export journal CSV','导出日记账 CSV','تصدير اليومية CSV'],
+dash:['Ringkasan','Dashboard'],gl:['Buku besar','Ledger'],team:['Tim','Team'],
+rvx:['Pendapatan vs beban (6 bulan)','Revenue vs expenses (6 months)'],cf:['Arus kas (6 bulan)','Cash flow (6 months)'],cin:['Masuk','In'],cout:['Keluar','Out'],
+bal:['Saldo','Balance'],acct:['Akun','Account'],line:['Baris','Line'],diff:['Selisih','Difference'],notbal:['Debit dan kredit harus seimbang (min. 2 baris)','Debits and credits must balance (min. 2 lines)'],
+item:['Barang/jasa','Item'],qty:['Jml','Qty'],price:['Harga','Price'],tax:['Pajak %','Tax %'],sub:['Subtotal','Subtotal'],print:['Cetak / PDF','Print / PDF'],
+company:['Nama usaha','Business name'],logo:['Logo','Logo'],invite:['Undang','Invite'],role:['Peran','Role'],pending:['menunggu','pending'],remove:['Hapus','Remove'],save:['Simpan','Save'],ws:['Nama buku','Book name'],
+ro:['Akun Anda hanya bisa melihat (viewer).','Your account is view-only (viewer).'],onlyowner:['Hanya owner yang bisa mengelola tim. Peran Anda:','Only the owner can manage the team. Your role:'],
+inve:['Undangan aktif saat orang itu masuk dengan email tersebut. Jalankan schema-v2.sql dulu.','The invite activates when that person signs in with that email. Run schema-v2.sql first.'],
+a2200:['Utang pajak','Tax payable'],google:['Masuk dengan Google','Continue with Google','使用 Google 登录','المتابعة عبر Google'],
+sent:['Cek email Anda untuk tautan konfirmasi/pemulihan.','Check your email for the confirmation/recovery link.','请查收邮件中的确认/恢复链接。','تحقق من بريدك للحصول على رابط التأكيد/الاستعادة.'],
+setpw:['Simpan kata sandi baru','Save new passphrase','保存新密码','حفظ العبارة الجديدة'],
+conf:['Isi SB_URL dan SB_KEY di index.html dengan data proyek Supabase Anda.','Set SB_URL and SB_KEY in index.html to your Supabase project values.','请在 index.html 中填写 Supabase 项目的 SB_URL 和 SB_KEY。','عيّن SB_URL و SB_KEY في index.html من مشروع Supabase.'],
+conflict:['Data berubah di perangkat lain. Memuat ulang...','Data changed elsewhere. Reloading...','数据已在别处更改，正在重新加载…','تغيّرت البيانات في مكان آخر. جارٍ إعادة التحميل…'],
+a1100:['Kas & Bank','Cash & Bank','现金及银行','النقد والبنك'],a1200:['Piutang usaha','Accounts receivable','应收账款','الذمم المدينة'],
+a2100:['Utang usaha','Accounts payable','应付账款','الذمم الدائنة'],a3100:['Modal pemilik','Owner capital','所有者资本','رأس المال'],
+a4100:['Pendapatan jasa','Service revenue','服务收入','إيرادات الخدمات'],a5100:['Beban gaji','Payroll expense','工资费用','مصروف الرواتب'],
+a5200:['Beban sewa','Rent expense','租金费用','مصروف الإيجار']};
+let sb,ws,ver=0,role='owner',rec=false,busy=false,msg='',li=0,st,disp='IDR',tab='dash',idle,fails=0,until=0;
+const t=k=>{const a=S[k]||[k];return a[li]??a[1]??a[0]};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const b64=b=>{let s='';for(const x of new Uint8Array(b))s+=String.fromCharCode(x);return btoa(s)},ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(s)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function save(){if(role==='viewer'){toast(t('ro'));st=null;setTimeout(()=>load(ws),0);return}const{data,error}=await sb.from('ledgers').update({data:st,version:ver+1,updated_at:new Date().toISOString()}).eq('workspace_id',ws).eq('version',ver).select('version');
+if(error||!data||!data.length){msg=t('conflict');st=null;draw();setTimeout(()=>location.reload(),1800);return}ver=data[0].version}
+async function load(wid){if(busy)return;busy=true;try{
+await sb.rpc('accept_invites');const sel='workspace_id,role,workspaces(name)';
+let r=await sb.from('members').select(sel);if(r.error)throw r.error;
+if(!r.data.length){const c=await sb.rpc('create_workspace',{n:'LedgerGuard'});if(c.error)throw c.error;r=await sb.from('members').select(sel);if(r.error)throw r.error}
+mem=r.data;let last='';try{last=localStorage.getItem('lgw')||''}catch(e){}
+const p=mem.find(x=>x.workspace_id===wid)||mem.find(x=>x.workspace_id===last)||mem[0];ws=p.workspace_id;role=p.role;try{localStorage.setItem('lgw',ws)}catch(e){}
+const{data:l,error:e2}=await sb.from('ledgers').select('data,version').eq('workspace_id',ws).single();if(e2)throw e2;
+const fresh=!Object.keys(l.data).length;st=fresh?seed():l.data;ver=l.version;st.rates.MYR??=3800;st.invoices??=[];
+if(!st.accts.some(a=>a.c==='2200'))st.accts.push({c:'2200',y:'Li',n:''});
+if(fresh)await save();await autorun();msg='';ping();draw()}catch(e){st=null;msg=e.message;draw()}finally{busy=false}}
+const seed=()=>({rates:{IDR:1,MYR:3800,USD:16000,EUR:17500,SGD:12300,JPY:105,CNY:2250,SAR:4270},
+accts:[['1100','A'],['1200','A'],['2100','Li'],['2200','Li'],['3100','E'],['4100','R'],['5100','X'],['5200','X']].map(([c,y])=>({c,y,n:''})),entries:[],rules:[],invoices:[]});
+const nm=a=>S['a'+a.c]?t('a'+a.c):a.n;
+const today=()=>new Date().toISOString().slice(0,10);
+const addM=(d,m)=>{const x=new Date(d+'T00:00:00Z');x.setUTCMonth(x.getUTCMonth()+m);return x.toISOString().slice(0,10)};
+async function post(date,desc,cur,lines,auto){if(role==='viewer'){toast(t('ro'));throw new Error('ro')}const prev=st.entries.length?st.entries.at(-1).hash:'0';const e={id:st.entries.length+1,date,desc,cur,rate:st.rates[cur],lines,auto:!!auto,prev};e.hash=await sha(prev+JSON.stringify([e.id,date,desc,cur,e.rate,lines]));st.entries.push(e)}
+async function autorun(){let n=0;for(const r of st.rules){while(r.next<=today()&&n++<120){await post(r.next,r.desc,r.cur,[{a:r.d,dr:r.amt,cr:0},{a:r.c,dr:0,cr:r.amt}],true);r.next=addM(r.next,r.every)}}if(n)await save()}
+const cfgOk=()=>SB_URL.startsWith('https://')&&SB_KEY.length>20&&window.supabase;
+async function boot(){if(!cfgOk()){draw();return}sb=supabase.createClient(SB_URL,SB_KEY);
+sb.auth.onAuthStateChange((ev,ses)=>{if(ev==='PASSWORD_RECOVERY'){rec=true;draw()}else if(ev==='SIGNED_OUT'){st=null;draw()}else if(ses&&!st&&!rec)setTimeout(load,0)});
+draw()}
+async function authGo(mode){const e=($('#em')||{}).value?.trim()||'',p=($('#pw')||{}).value||'',m=$('#m');m.textContent='';let r;
+if((mode==='up'||mode==='n')&&p.length<8){m.textContent=t('short');return}
+if(mode==='in')r=await sb.auth.signInWithPassword({email:e,password:p});
+else if(mode==='up')r=await sb.auth.signUp({email:e,password:p,options:{emailRedirectTo:RED}});
+else if(mode==='g')r=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:RED}});
+else if(mode==='f')r=await sb.auth.resetPasswordForEmail(e,{redirectTo:RED});
+else if(mode==='n'){r=await sb.auth.updateUser({password:p});if(!r.error){rec=false;await load();return}}
+if(r&&r.error){m.textContent=r.error.message;return}
+if(mode==='up'||mode==='f')m.textContent=t('sent')}
+async function lockNow(){clearTimeout(idle);st=null;if(sb)await sb.auth.signOut();draw()}
+function ping(){clearTimeout(idle);idle=setTimeout(lockNow,300000)}
+['click','keydown','pointerdown'].forEach(e=>addEventListener(e,()=>st&&ping()));
+const conv=(v,from,to)=>v*st.rates[from]/st.rates[to];
+const fmt=(v,c=disp)=>{try{return new Intl.NumberFormat(LOC[li],{style:'currency',currency:c,currencyDisplay:'narrowSymbol'}).format(v)}catch(e){return v.toFixed(2)+' '+c}};
+function bals(){const b={};st.accts.forEach(a=>b[a.c]=0);st.entries.forEach(e=>e.lines.forEach(l=>b[l.a]+=(l.dr-l.cr)*e.rate));return b}
+const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}"${v===sel?' selected':''}>${esc(l)}</option>`).join('');
+const curs=()=>Object.keys(st.rates).map(c=>[c,c==='MYR'?'RM · MYR':c]);
+const accOpts=()=>st.accts.map(a=>[a.c,a.c+' · '+nm(a)]);
+const tyOf=c=>(st.accts.find(a=>a.c===c)||{}).y;
+function bars(d){const W=560,H=170,m=Math.max(1,...d.flatMap(x=>[x.a,x.b])),w=W/d.length;
+return`<svg viewBox="0 0 ${W} ${H+22}" width="100%" role="img">${d.map((x,i)=>{const h1=Math.max(0,x.a)/m*H,h2=Math.max(0,x.b)/m*H,X=i*w;return`<rect x="${X+w*.12}" y="${H-h1}" width="${w*.34}" height="${h1}" fill="var(--ac)"/><rect x="${X+w*.52}" y="${H-h2}" width="${w*.34}" height="${h2}" fill="var(--brass)"/><text x="${X+w/2}" y="${H+16}" text-anchor="middle" font-size="11" fill="var(--mut)">${x.l}</text>`}).join('')}</svg>`}
+function monthly(){const o=[],n=new Date();for(let i=5;i>=0;i--){const d=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth()-i,1)).toISOString();o.push({k:d.slice(0,7),l:d.slice(5,7),a:0,b:0,ci:0,co:0})}
+st.entries.forEach(e=>{const m=o.find(x=>x.k===e.date.slice(0,7));if(!m)return;e.lines.forEach(l=>{const y=tyOf(l.a),v=(l.dr-l.cr)*e.rate;if(y==='R')m.a-=v;else if(y==='X')m.b+=v;if(l.a==='1100'){if(v>0)m.ci+=v;else m.co-=v}})});return o}
+function dashboard(){const b=bals(),D=c=>conv(c,'IDR',disp),sm=y=>st.accts.filter(a=>a.y===y).reduce((s,a)=>s+b[a.c],0);
+const R=-sm('R'),X=sm('X'),mo=monthly().map(o=>({l:o.l,a:D(o.a),b:D(o.b),ci:D(o.ci),co:D(o.co)}));
+const k=(l,v,c='')=>`<div class="card kpi"><div class="mut">${l}</div><div class="big ${c}">${fmt(v)}</div></div>`;
+const lg=(a,b)=>`<p class="mut"><span style="color:var(--ac)">■</span> ${a} &nbsp; <span style="color:var(--brass)">■</span> ${b}</p>`;
+return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select onchange="disp=this.value;draw()">${opt(curs(),disp)}</select></label></div>
+<div class="grid">${k(t('a1100'),D(b['1100']||0))}${k(t('a1200'),D(b['1200']||0))}${k(t('R'),D(R))}${k(t('net'),D(R-X),R-X<0?'bad':'ok')}</div>
+<div class="grid"><div class="card"><h3>${t('rvx')}</h3>${bars(mo.map(o=>({l:o.l,a:o.a,b:o.b})))}${lg(t('R'),t('X'))}</div>
+<div class="card"><h3>${t('cf')}</h3>${bars(mo.map(o=>({l:o.l,a:o.ci,b:o.co})))}${lg(t('cin'),t('cout'))}</div></div>`}
+let glc='1100';
+function ledgerTab(){const a=st.accts.find(x=>x.c===glc)||st.accts[0],nat=a.y==='A'||a.y==='X'?1:-1;let run=0;
+const rows=st.entries.flatMap(e=>e.lines.filter(l=>l.a===a.c).map(l=>({e,l}))).map(({e,l})=>{const dv=conv(l.dr*e.rate,'IDR',disp),cv=conv(l.cr*e.rate,'IDR',disp);run+=nat*(dv-cv);return`<tr><td>#${e.id}</td><td>${esc(e.date)}</td><td>${esc(e.desc)}</td><td class="n">${dv?fmt(dv):''}</td><td class="n">${cv?fmt(cv):''}</td><td class="n">${fmt(run)}</td></tr>`}).join('');
+return`<div class="row" style="margin-bottom:16px"><label>${t('acct')}<select onchange="glc=this.value;draw()">${opt(accOpts(),a.c)}</select></label><label>${t('disp')}<select onchange="disp=this.value;draw()">${opt(curs(),disp)}</select></label></div><div class="card sc"><table><tr><th>#</th><th>${t('date')}</th><th>${t('desc')}</th><th class="n">${t('dr')}</th><th class="n">${t('cr')}</th><th class="n">${t('bal')}</th></tr>${rows}</table></div>`}
+function toast(m){const e=$('#toast');e.textContent=m;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,3000)}
+let mem=[];
+const wsSel=()=>mem.length>1?`<select aria-label="workspace" onchange="busy=false;load(this.value)">${mem.map(x=>`<option value="${esc(x.workspace_id)}"${x.workspace_id===ws?' selected':''}>${esc((x.workspaces&&x.workspaces.name)||'Buku')} (${esc(x.role)})</option>`).join('')}</select>`:'';
+function teamTab(){if(role!=='owner')return`<div class="card"><p>${t('onlyowner')} ${esc(role)}</p></div>`;const cur=mem.find(x=>x.workspace_id===ws);
+return`<div class="card"><h3>${t('team')}</h3><div class="row"><label>${t('ws')}<input id="wn" value="${esc((cur&&cur.workspaces&&cur.workspaces.name)||'')}"></label><button class="b g" onclick="renWs()">${t('save')}</button></div></div>
+<div class="card"><div class="row"><label>${t('email')}<input id="ie" type="email"></label><label>${t('role')}<select id="ir">${opt([['editor','editor'],['viewer','viewer']],'editor')}</select></label><button class="b" onclick="invite()">${t('invite')}</button></div><p class="mut">${t('inve')}</p><p class="bad" id="te"></p></div><div class="card sc" id="tm"></div>`}
+async function teamLoad(){if(role!=='owner'||!sb)return;const el=$('#tm');if(!el)return;
+const [a,b]=await Promise.all([sb.rpc('list_members',{w:ws}),sb.from('invites').select('id,email,role').eq('workspace_id',ws)]);
+el.innerHTML='<table>'+(a.data||[]).map(x=>`<tr><td>${esc(x.email)}</td><td>${esc(x.role)}</td><td>${x.role==='owner'?'':`<button class="b g" onclick="rmMem('${esc(x.user_id)}')">${t('remove')}</button>`}</td></tr>`).join('')+(b.data||[]).map(x=>`<tr><td>${esc(x.email)}</td><td>${esc(x.role)} · ${t('pending')}</td><td><button class="b g" onclick="delInv('${esc(x.id)}')">${t('remove')}</button></td></tr>`).join('')+'</table>'}
+async function invite(){const e=$('#ie').value.trim().toLowerCase(),m=$('#te');m.textContent='';if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){m.textContent=t('bademail');return}
+const{error}=await sb.from('invites').insert({workspace_id:ws,email:e,role:$('#ir').value});if(error){m.textContent=error.message;return}$('#ie').value='';teamLoad()}
+async function delInv(id){await sb.from('invites').delete().eq('id',id);teamLoad()}
+async function rmMem(u){await sb.from('members').delete().eq('workspace_id',ws).eq('user_id',u);teamLoad()}
+async function renWs(){const n=$('#wn').value.trim().slice(0,80);if(!n)return;await sb.from('workspaces').update({name:n}).eq('id',ws);const x=mem.find(x=>x.workspace_id===ws);if(x)x.workspaces={name:n};draw()}
+async function setCo(v){st.co=v.trim().slice(0,80);await save()}
+function setLogo(inp){const f=inp.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);im.onload=async()=>{const k=Math.min(1,240/im.width),c=document.createElement('canvas');c.width=Math.max(1,im.width*k);c.height=Math.max(1,im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);st.logo=c.toDataURL('image/jpeg',.8);URL.revokeObjectURL(u);await save();draw()};im.src=u}
+function report(){const b=bals(),D=c=>conv(c,'IDR',disp);
+const sum=ty=>st.accts.filter(a=>a.y===ty).reduce((s,a)=>s+b[a.c],0);
+const A=sum('A'),Li=-sum('Li'),E=-sum('E'),R=-sum('R'),X=sum('X'),N=R-X;
+const tb=st.accts.map(a=>{const v=D(b[a.c]);return`<tr><td>${esc(a.c)}</td><td>${esc(nm(a))}</td><td class="n">${v>0?fmt(v):''}</td><td class="n">${v<0?fmt(-v):''}</td></tr>`}).join('');
+const sec=(ty,sg)=>st.accts.filter(a=>a.y===ty).map(a=>`<tr><td>${esc(nm(a))}</td><td class="n">${fmt(D(sg*b[a.c]))}</td></tr>`).join('');
+return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select onchange="disp=this.value;draw()">${opt(curs(),disp)}</select></label></div>
+<div class="grid"><div class="card"><div class="mut">${t('net')}</div><div class="big ${N<0?'bad':'ok'}">${fmt(D(N))}</div></div>
+<div class="card"><div class="mut">${t('A')}</div><div class="big">${fmt(D(A))}</div></div></div>
+<div class="grid"><div class="card"><h3>${t('is')}</h3><div class="sc"><table>${sec('R',-1)}${sec('X',1)}<tr class="t"><td>${t('net')}</td><td class="n">${fmt(D(N))}</td></tr></table></div></div>
+<div class="card"><h3>${t('bs')}</h3><div class="sc"><table>${sec('A',1)}<tr class="t"><td>${t('A')}</td><td class="n">${fmt(D(A))}</td></tr>${sec('Li',-1)}${sec('E',-1)}<tr><td>${t('net')}</td><td class="n">${fmt(D(N))}</td></tr><tr class="t"><td>${t('Li')} + ${t('E')}</td><td class="n">${fmt(D(Li+E+N))}</td></tr></table></div></div></div>
+<div class="card"><h3>${t('tb')}</h3><div class="sc"><table><tr><th>${t('code')}</th><th>${t('name')}</th><th class="n">${t('dr')}</th><th class="n">${t('cr')}</th></tr>${tb}</table></div></div>
+<div class="card"><div class="row"><label>${t('code')}<input id="ac" size="6"></label><label>${t('name')}<input id="an"></label><label>${t('type')}<select id="ay">${opt(['A','Li','E','R','X'].map(k=>[k,t(k)]),'A')}</select></label><button class="b" onclick="addAcc()">${t('add')}</button></div></div>`}
+async function addAcc(){const c=$('#ac').value.trim(),n=$('#an').value.trim();if(!c||!n||st.accts.some(a=>a.c===c))return;st.accts.push({c,n,y:$('#ay').value});await save();draw()}
+function journal(){const rows=[...st.entries].reverse().map(e=>{const tot=e.lines.reduce((s,l)=>s+l.dr,0);return`<tr><td>#${e.id}</td><td>${esc(e.date)}</td><td>${esc(e.desc)}${e.auto?` <span class="mut">(${t('auto')})</span>`:''}</td><td>${e.lines.map(l=>esc(l.a)).join(', ')}</td><td class="n">${fmt(tot,e.cur)}</td><td><button class="b g" onclick="rev(${e.id})">${t('rev')}</button></td></tr>`}).join('');
+return`<div class="card"><div class="row"><label>${t('date')}<input type="date" id="jd" value="${today()}"></label><label>${t('desc')}<input id="jt"></label><label>${t('cur')}<select id="jc">${opt(curs(),'IDR')}</select></label></div>
+<div id="jl" style="margin:12px 0">${jrow('1100')}${jrow('4100')}</div>
+<div class="row"><button class="b g" onclick="$('#jl').insertAdjacentHTML('beforeend',jrow());jbal()">+ ${t('line')}</button><button class="b" onclick="addJ()">${t('post')}</button><span id="jb" class="mut"></span></div><p class="bad" id="je"></p></div>
+<div class="card sc"><table><tr><th>#</th><th>${t('date')}</th><th>${t('desc')}</th><th>${t('acct')}</th><th class="n">${t('amt')}</th><th></th></tr>${rows}</table></div>`}
+const jrow=(a='')=>`<div class="row jr" style="margin-bottom:6px"><select class="ja">${opt(accOpts(),a)}</select><input class="jdv" type="number" min="0" step="any" placeholder="${t('dr')}" style="width:120px" oninput="jbal()"><input class="jcv" type="number" min="0" step="any" placeholder="${t('cr')}" style="width:120px" oninput="jbal()"></div>`;
+function jlines(){return[...document.querySelectorAll('.jr')].map(r=>({a:r.querySelector('.ja').value,dr:parseFloat(r.querySelector('.jdv').value)||0,cr:parseFloat(r.querySelector('.jcv').value)||0})).filter(l=>l.dr||l.cr)}
+function jbal(){const q=jlines();$('#jb').textContent=t('diff')+': '+(q.reduce((s,l)=>s+l.dr,0)-q.reduce((s,l)=>s+l.cr,0)).toFixed(2)}
+async function addJ(){const q=jlines(),d=q.reduce((s,l)=>s+l.dr,0),c=q.reduce((s,l)=>s+l.cr,0);if(q.length<2||d<=0||Math.abs(d-c)>0.005){$('#je').textContent=t('notbal');return}
+await post($('#jd').value||today(),$('#jt').value.trim().slice(0,120)||'-',$('#jc').value,q);await save();draw()}
+async function rev(id){const e=st.entries.find(x=>x.id===id);await post(today(),'↩ #'+id+' '+e.desc,e.cur,e.lines.map(l=>({a:l.a,dr:l.cr,cr:l.dr})));st.entries.at(-1).rate=e.rate;await save();draw()}
+function invoices(){const rows=st.invoices.map((v,i)=>`<tr><td>${esc(v.no||'#'+v.n)}</td><td>${esc(v.who)}</td><td>${esc(v.due||'')}</td><td class="n">${fmt(v.total||v.amt,v.cur)}</td><td>${v.paid?`<span class="ok">${t('paid')}</span>`:`<button class="b g" onclick="payInv(${i})">${t('mark')}</button>`} <button class="b g" onclick="printInv(${i})">${t('print')}</button></td></tr>`).reverse().join('');
+return`<div class="card"><div class="row"><label>${t('who')}<input id="iw"></label><label>${t('cur')}<select id="ic">${opt(curs(),'IDR')}</select></label><label>${t('due')}<input id="idu" type="date" value="${addM(today(),1)}"></label><label>${t('tax')}<input id="itx" type="number" min="0" max="100" step="any" value="0" style="width:80px"></label></div>
+<div id="il" style="margin:12px 0">${irow()}</div><div class="row"><button class="b g" onclick="$('#il').insertAdjacentHTML('beforeend',irow())">+ ${t('line')}</button><button class="b" onclick="addInv()">${t('add')}</button></div></div><div class="card sc"><table>${rows}</table></div>`}
+const irow=()=>`<div class="row ir" style="margin-bottom:6px"><input class="id" placeholder="${t('item')}" style="flex:1;min-width:140px"><input class="iq" type="number" min="0" step="any" value="1" style="width:70px"><input class="ip" type="number" min="0" step="any" placeholder="${t('price')}" style="width:130px"></div>`;
+function ilines(){return[...document.querySelectorAll('.ir')].map(r=>({d:r.querySelector('.id').value.trim().slice(0,100),q:parseFloat(r.querySelector('.iq').value)||0,p:parseFloat(r.querySelector('.ip').value)||0})).filter(x=>x.q>0&&x.p>0)}
+async function addInv(){const w=$('#iw').value.trim().slice(0,80),it=ilines(),tx=Math.min(100,Math.max(0,parseFloat($('#itx').value)||0));if(!w||!it.length)return;
+const sub=it.reduce((s,x)=>s+x.q*x.p,0),tax=Math.round(sub*tx)/100,total=sub+tax,c=$('#ic').value,n=st.invoices.length+1,no='INV-'+today().slice(0,4)+'-'+String(n).padStart(4,'0');
+const q=[{a:'1200',dr:total,cr:0},{a:'4100',dr:0,cr:sub}];if(tax)q.push({a:'2200',dr:0,cr:tax});
+await post(today(),no+' '+w,c,q);st.invoices.push({n,no,who:w,items:it,tax:tx,sub,taxAmt:tax,total,cur:c,date:today(),due:$('#idu').value,paid:false});await save();draw()}
+async function payInv(i){const v=st.invoices[i];if(v.paid)return;const a=v.total||v.amt;await post(today(),'PAY '+(v.no||'#'+v.n)+' '+v.who,v.cur,[{a:'1100',dr:a,cr:0},{a:'1200',dr:0,cr:a}]);v.paid=true;await save();draw()}
+function printInv(i){const v=st.invoices[i],it=v.items||[{d:v.who,q:1,p:v.amt}],f=x=>fmt(x,v.cur),bd='border-bottom:1px solid #000',lg=st.logo&&st.logo.startsWith('data:image/')?`<img src="${esc(st.logo)}" style="max-height:70px;max-width:200px">`:'<span></span>';
+$('#pv').innerHTML=`<div style="font:14px/1.5 sans-serif;color:#000;padding:24px;max-width:720px;margin:auto"><div style="display:flex;justify-content:space-between;align-items:center">${lg}<div style="text-align:right"><b style="font-size:22px">INVOICE</b><br>${esc(v.no||'#'+v.n)}</div></div><p><b>${esc(st.co||'')}</b></p><p>${t('who')}: <b>${esc(v.who)}</b><br>${t('date')}: ${esc(v.date||'')}<br>${t('due')}: ${esc(v.due||'')}</p><table style="width:100%;border-collapse:collapse"><tr><th style="text-align:left;${bd}">${t('item')}</th><th style="${bd}">${t('qty')}</th><th style="text-align:right;${bd}">${t('price')}</th><th style="text-align:right;${bd}">${t('amt')}</th></tr>${it.map(x=>`<tr><td>${esc(x.d)}</td><td align="center">${x.q}</td><td align="right">${f(x.p)}</td><td align="right">${f(x.q*x.p)}</td></tr>`).join('')}</table><p style="text-align:right">${t('sub')}: ${f(v.sub||v.amt)}<br>${t('tax')} ${v.tax||0}: ${f(v.taxAmt||0)}<br><b>${t('tot')}: ${f(v.total||v.amt)}</b></p></div>`;window.print()}
+function bank(){return`<div class="card"><p class="mut">${t('bankh')}</p><div class="row"><label>${t('cur')}<select id="bc">${opt(curs(),'IDR')}</select></label><button class="b" onclick="recon()">${t('run')}</button></div><p><textarea id="bt" rows="6" style="width:100%;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line)"></textarea></p><div id="br" class="sc"></div></div>`}
+function recon(){const cur=$('#bc').value,used=new Set();const cands=st.entries.filter(e=>e.cur===cur).map(e=>({e,v:e.lines.filter(l=>l.a==='1100').reduce((s,l)=>s+l.dr-l.cr,0)})).filter(x=>x.v);
+const out=$('#bt').value.split('\n').map(x=>x.trim()).filter(Boolean).map(ln=>{const p=ln.split(','),a=parseFloat(p[p.length-1]),d=p.slice(0,-1).join(',');const i=cands.findIndex((c,j)=>!used.has(j)&&Math.abs(c.v-a)<0.005);if(i>=0)used.add(i);return`<tr><td>${esc(d)}</td><td class="n">${isNaN(a)?'?':fmt(a,cur)}</td><td class="${i>=0?'ok':'bad'}">${i>=0?t('match')+' #'+cands[i].e.id:t('unm')}</td></tr>`}).join('');
+$('#br').innerHTML=`<table>${out}</table>`}
+function exportCsv(){const q=x=>{x=String(x);if(/^[=+\-@]/.test(x))x="'"+x;return'"'+x.replace(/"/g,'""')+'"'};
+const rows=[['id','date','desc','currency','rate','account','debit','credit']];st.entries.forEach(e=>e.lines.forEach(l=>rows.push([e.id,e.date,e.desc,e.cur,e.rate,l.a,l.dr,l.cr])));
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'}));a.download='jurnal.csv';a.click()}
+function auto(){const rows=st.rules.map((r,i)=>`<tr><td>${esc(r.desc)}</td><td>${esc(r.d)} → ${esc(r.c)}</td><td class="n">${fmt(r.amt,r.cur)}</td><td>${r.every}</td><td>${esc(r.next)}</td><td><button class="b g" onclick="delR(${i})">×</button></td></tr>`).join('');
+return`<div class="card"><h3>${t('rules')}</h3><p class="mut">${t('ruleh')}</p><div class="row"><label>${t('desc')}<input id="rt"></label><label>${t('dr')}<select id="rd">${opt(accOpts(),'5200')}</select></label><label>${t('cr')}<select id="rc">${opt(accOpts())}</select></label><label>${t('amt')}<input id="ra" type="number" min="0" step="any" style="width:120px"></label><label>${t('cur')}<select id="rcu">${opt(curs(),'IDR')}</select></label><label>${t('every')}<input id="re" type="number" min="1" value="1" style="width:80px"></label><label>${t('first')}<input id="rf" type="date" value="${today()}"></label><button class="b" onclick="addR()">${t('add')}</button></div></div>
+<div class="card sc"><table>${rows}</table></div>`}
+async function addR(){const a=parseFloat($('#ra').value),d=$('#rd').value,c=$('#rc').value;if(!(a>0)||d===c)return;st.rules.push({desc:$('#rt').value.trim().slice(0,120)||'-',d,c,amt:a,cur:$('#rcu').value,every:Math.max(1,parseInt($('#re').value)||1),next:$('#rf').value||today()});await autorun();await save();draw()}
+async function delR(i){st.rules.splice(i,1);await save();draw()}
+function settings(){return`<div class="card"><div class="row"><label>${t('company')}<input value="${esc(st.co||'')}" onchange="setCo(this.value)"></label><label>${t('logo')}<input type="file" accept="image/*" onchange="setLogo(this)"></label></div></div><div class="card"><h3>${t('set')}</h3><p>${t('sec')}</p><div class="row"><button class="b" onclick="verify()">${t('verify')}</button><button class="b g" onclick="exportCsv()">${t('exp')}</button><button class="b g" onclick="wipe()">${t('wipe')}</button></div><p id="vr"></p></div>
+<div class="card"><h3>${t('rate')}</h3><div class="row">${Object.keys(st.rates).filter(c=>c!=='IDR').map(c=>`<label>${c}<input type="number" min="0" step="any" value="${st.rates[c]}" style="width:110px" onchange="setRate('${c}',this.value)"></label>`).join('')}</div></div>`}
+async function setRate(c,v){v=parseFloat(v);if(v>0){st.rates[c]=v;await save()}}
+async function verify(){let prev='0';for(const e of st.entries){const h=await sha(prev+JSON.stringify([e.id,e.date,e.desc,e.cur,e.rate,e.lines]));if(e.prev!==prev||e.hash!==h){$('#vr').innerHTML=`<span class="bad">${t('tamp')}${e.id}</span>`;return}prev=e.hash}
+$('#vr').innerHTML=`<span class="ok">${t('good')} ${st.entries.length}</span>`}
+async function wipe(){if(confirm('?')){st=seed();await save();draw()}}
+function draw(){document.documentElement.lang=L[li];document.documentElement.dir=li===3?'rtl':'ltr';
+const sel=`<select aria-label="language" onchange="li=+this.value;draw()">${[['0','Indonesia'],['1','English'],['2','中文'],['3','العربية']].map(([v,l])=>`<option value="${v}"${+v===li?' selected':''}>${l}</option>`).join('')}</select>`;
+if(!st){const bt=(m,l,c='')=>`<button class="b ${c}" onclick="authGo('${m}')">${t(l)}</button>`;
+const body=!cfgOk()?`<p class="bad">${t('conf')}</p>`:rec?`<div class="row" style="flex-direction:column;align-items:stretch"><input id="pw" type="password" autocomplete="new-password" placeholder="${esc(t('newpw'))}"></div><p>${bt('n','setpw')}</p>`
+:`<p>${bt('g','google')}</p><div class="row" style="flex-direction:column;align-items:stretch"><input id="em" type="email" autocomplete="email" placeholder="${esc(t('email'))}"><input id="pw" type="password" autocomplete="current-password" placeholder="${esc(t('pw'))}" onkeydown="if(event.key==='Enter')authGo('in')"></div><p>${bt('in','signin')} ${bt('up','signup','g')} ${bt('f','forgot','g')}</p>`;
+$('#app').innerHTML=`<div class="card" id="lock"><h1>LedgerGuard</h1><p class="mut">${t('sub')}</p>${body}<p class="bad" id="m">${esc(msg)}</p><div>${sel}</div></div>`;return}
+const v={dash:dashboard,rep:report,gl:ledgerTab,jrn:journal,inv:invoices,bank:bank,aut:auto,team:teamTab,set:settings}[tab]();
+$('#app').innerHTML=`<header><h1 style="margin:0;display:flex;gap:8px;align-items:center"><svg width="26" height="26" viewBox="0 0 26 26"><rect width="26" height="26" rx="5" fill="var(--ac)"/><path d="M7 8h12M7 13h12M7 18h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>LedgerGuard</h1><div class="row">${wsSel()}${sel}<button class="b g" onclick="lockNow()">${t('lock')}</button></div></header><nav>${['dash','rep','gl','jrn','inv','bank','aut','team','set'].map(k=>`<button class="${k===tab?'on':''}" onclick="tab='${k}';draw()">${t(k)}</button>`).join('')}</nav>${v}`;if(tab==='team')teamLoad()}
+boot();
+</script></body></html>
