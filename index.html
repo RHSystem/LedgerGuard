@@ -54,7 +54,7 @@ td.n,th.n{text-align:end;font-variant-numeric:tabular-nums}tr.t td{font-weight:7
 .legal{max-width:760px;margin:0 auto}.legal h3{margin-top:20px}
 a{color:var(--ac)}.chips{display:flex;gap:8px;overflow-x:auto;margin:0 0 14px;padding-bottom:4px;scrollbar-width:none}.ch{flex:none;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px inherit;cursor:pointer}.ch.on{background:var(--ac);color:var(--onac);border-color:var(--ac)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
-@media print{#app,#toast{display:none!important}#pv{display:block}body{background:#fff}}
+@media print{#pv td,#pv th{white-space:normal}#app,#toast{display:none!important}#pv{display:block}body{background:#fff}}
 </style></head><body><div class="wrap" id="app"></div><div id="pv"></div><div id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
@@ -111,7 +111,7 @@ item:['Barang/jasa','Item'],qty:['Jml','Qty'],price:['Harga','Price'],tax:['Paja
 company:['Nama usaha','Business name'],logo:['Logo','Logo'],invite:['Undang','Invite'],role:['Peran','Role'],pending:['menunggu','pending'],remove:['Hapus','Remove'],save:['Simpan','Save'],ws:['Nama buku','Book name'],
 ro:['Akun Anda hanya bisa melihat (viewer).','Your account is view-only (viewer).'],onlyowner:['Hanya owner yang bisa mengelola tim. Peran Anda:','Only the owner can manage the team. Your role:'],
 inve:['Undangan aktif saat orang itu masuk dengan email tersebut. Jalankan schema-v2.sql dulu.','The invite activates when that person signs in with that email. Run schema-v2.sql first.'],
-a2200:['Utang pajak','Tax payable'],cfg:['Pengaturan','Settings'],c_prof:['Profil','Profile'],c_team:['Tim','Team'],c_sec:['Keamanan','Security'],c_bhs:['Bahasa','Language'],c_mc:['Mata uang','Currency'],c_out:['Keluar','Log out'],
+a2200:['Utang pajak','Tax payable'],g_from:['Dari','From'],g_to:['Sampai','To'],g_per:['Periode','Period'],g_sd:['s.d.','to'],g_open:['Saldo awal','Opening balance'],g_close:['Saldo akhir','Closing balance'],cfg:['Pengaturan','Settings'],c_prof:['Profil','Profile'],c_team:['Tim','Team'],c_sec:['Keamanan','Security'],c_bhs:['Bahasa','Language'],c_mc:['Mata uang','Currency'],c_out:['Keluar','Log out'],
 terms:['Syarat Layanan','Terms of Service'],privacy:['Kebijakan Privasi','Privacy Policy'],eff:['Berlaku sejak','Effective'],l_agree:['Dengan masuk, Anda menyetujui','By continuing, you agree to the'],l_and:['dan','and'],
 l_badge:['Pembukuan untuk usaha kecil dan menengah','Bookkeeping for small businesses'],l_h:['Pembukuan rapi, laporan siap kapan saja','Tidy books, reports whenever you need them'],
 l_p:['Catat jurnal, buat faktur, dan pantau laporan dalam Rupiah, Ringgit, dan US Dollar. Aman, mudah, dan bisa dipakai bersama tim.','Record journals, issue invoices, and track reports in Rupiah, Ringgit, and US Dollar. Secure, simple, and ready for your team.'],
@@ -189,10 +189,21 @@ return`<div class="row" style="margin-bottom:16px"><label>${t('disp')}<select on
 <div class="grid kg">${k(t('a1100'),D(b['1100']||0))}${k(t('a1200'),D(b['1200']||0))}${k(t('R'),D(R))}${k(t('net'),D(R-X),R-X<0?'bad':'ok')}</div>
 <div class="grid" style="margin-top:14px"><div class="card"><h3>${t('rvx')}</h3>${bars(mo.map(o=>({l:o.l,a:o.a,b:o.b})))}${lg(t('R'),t('X'))}</div>
 <div class="card"><h3>${t('cf')}</h3>${bars(mo.map(o=>({l:o.l,a:o.ci,b:o.co})))}${lg(t('cin'),t('cout'))}</div></div>`}
-let glc='1100';
-function ledgerTab(){const a=st.accts.find(x=>x.c===glc)||st.accts[0],nat=a.y==='A'||a.y==='X'?1:-1;let run=0;
-const rows=st.entries.flatMap(e=>e.lines.filter(l=>l.a===a.c).map(l=>({e,l}))).map(({e,l})=>{const dv=conv(l.dr*e.rate,'IDR',disp),cv=conv(l.cr*e.rate,'IDR',disp);run+=nat*(dv-cv);return`<tr><td>#${e.id}</td><td>${esc(e.date)}</td><td>${esc(e.desc)}</td><td class="n">${dv?fmt(dv):''}</td><td class="n">${cv?fmt(cv):''}</td><td class="n">${fmt(run)}</td></tr>`}).join('');
-return`<div class="row" style="margin-bottom:16px"><label>${t('acct')}<select onchange="glc=this.value;draw()">${opt(accOpts(),a.c)}</select></label><label>${t('disp')}<select onchange="setDisp(this.value)">${opt(curs(),disp)}</select></label></div><div class="card sc"><table><tr><th>#</th><th>${t('date')}</th><th>${t('desc')}</th><th class="n">${t('dr')}</th><th class="n">${t('cr')}</th><th class="n">${t('bal')}</th></tr>${rows}</table></div>`}
+let glc='1100',gl1=new Date().getFullYear()+'-01-01',gl2='';
+const fdate=d=>new Date(d+'T00:00:00').toLocaleDateString(LOC[li],{day:'numeric',month:'long',year:'numeric'});
+function glData(){const ac=st.accts.find(x=>x.c===glc)||st.accts[0],nat=ac.y==='A'||ac.y==='X'?1:-1,e2=gl2||today(),a=gl1<=e2?gl1:e2,b=gl1<=e2?e2:gl1,cv=v=>conv(v,'IDR',disp);
+let open=0,td=0,tc=0;const rows=[];
+[...st.entries].sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:x.id-y.id).forEach(e=>e.lines.filter(l=>l.a===ac.c).forEach(l=>{const d=cv(l.dr*e.rate),c=cv(l.cr*e.rate);if(e.date<a)open+=nat*(d-c);else if(e.date<=b){td+=d;tc+=c;rows.push({e,d,c})}}));
+let run=open;rows.forEach(r=>{run+=nat*(r.d-r.c);r.run=run});
+return{ac,a,b,open,td,tc,close:open+nat*(td-tc),rows}}
+function ledgerTab(){const g=glData(),body=g.rows.map(({e,d,c,run})=>`<tr><td>#${e.id}</td><td>${esc(e.date)}</td><td>${esc(e.desc)}</td><td class="n">${d?fmt(d):''}</td><td class="n">${c?fmt(c):''}</td><td class="n">${fmt(run)}</td></tr>`).join('');
+return`<div class="row" style="margin-bottom:12px"><label>${t('acct')}<select onchange="glc=this.value;draw()">${opt(accOpts(),g.ac.c)}</select></label><label>${t('g_from')}<input type="date" value="${g.a}" onchange="gl1=this.value||gl1;draw()"></label><label>${t('g_to')}<input type="date" value="${g.b}" onchange="gl2=this.value;draw()"></label><label>${t('disp')}<select onchange="setDisp(this.value)">${opt(curs(),disp)}</select></label><button class="b g" onclick="printLedger()">🖨️ ${t('print')}</button></div>
+<div class="card sc"><p style="margin:0 0 4px"><b>${esc(g.ac.c)} · ${esc(nm(g.ac))}</b></p><p class="mut" style="margin:0 0 10px">${t('g_per')}: ${fdate(g.a)} ${t('g_sd')} ${fdate(g.b)}</p><p style="margin:0 0 10px">${t('g_open')}: <b>${fmt(g.open)}</b> · ${t('g_close')}: <b>${fmt(g.close)}</b></p><table><tr><th>#</th><th>${t('date')}</th><th>${t('desc')}</th><th class="n">${t('dr')}</th><th class="n">${t('cr')}</th><th class="n">${t('bal')}</th></tr>
+<tr class="t"><td colspan="5">${t('g_open')}</td><td class="n">${fmt(g.open)}</td></tr>${body}
+<tr class="t"><td colspan="3">${t('tot')}</td><td class="n">${fmt(g.td)}</td><td class="n">${fmt(g.tc)}</td><td></td></tr>
+<tr class="t"><td colspan="5">${t('g_close')}</td><td class="n">${fmt(g.close)}</td></tr></table></div>`}
+function printLedger(){const g=glData(),card=document.querySelector('#app .sc'),lg=st.logo&&st.logo.startsWith('data:image/')?`<img src="${esc(st.logo)}" style="max-height:60px;max-width:180px">`:'<span></span>';
+$('#pv').innerHTML=`<div style="padding:24px;max-width:900px;margin:auto"><div style="display:flex;justify-content:space-between;align-items:center">${lg}<div style="text-align:right"><b style="font-size:20px">${t('gl')}</b><br>${disp}</div></div>${coBlock()}${card?card.outerHTML:''}</div>`;window.print()}
 function toast(m){const e=$('#toast');e.textContent=m;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,3000)}
 let mem=[];
 const wsSel=()=>mem.length>1?`<select aria-label="workspace" onchange="busy=false;load(this.value)">${mem.map(x=>`<option value="${esc(x.workspace_id)}"${x.workspace_id===ws?' selected':''}>${esc((x.workspaces&&x.workspaces.name)||'Buku')} (${esc(x.role)})</option>`).join('')}</select>`:'';
