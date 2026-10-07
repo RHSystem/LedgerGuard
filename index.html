@@ -37,7 +37,16 @@ td.n,th.n{text-align:end;font-variant-numeric:tabular-nums}tr.t td{font-weight:7
 .grid>.card{margin-bottom:0}.kg{grid-template-columns:repeat(2,minmax(0,1fr))}@media(min-width:900px){.kg{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:600px){.kpi .big{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpi{padding:12px}}.kpi{background:linear-gradient(135deg,var(--card),var(--ac2))}.kpi .big{font-size:24px;margin-top:4px}
 #lock{max-width:400px;margin:10vh auto;padding:24px}
 #pv{display:none;--ink:#000;--mut:#444;--line:#999;--card:#fff;--ac:#000;--brass:#000;--bad:#a00;--ok:#060;color:#000;font:13px/1.4 sans-serif}
-#pv .card{border:1px solid #999;padding:12px;margin:12px 0;page-break-inside:avoid;border-radius:0;box-shadow:none}
+#pv .card{border:1px solid #999;padding:12px;margin:12px 0;page-break-inside:avoid;border-radius:0;box-shadow:none}.lnav{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 2px 14px}
+.hero{text-align:center;padding:34px 8px 26px}.hero h1{font-size:clamp(28px,6vw,46px);line-height:1.15;margin:12px 0}.hero p{max-width:620px;margin:0 auto 20px;color:var(--mut);font-size:17px}
+.sec{margin:34px 0}.sec h2{text-align:center;font-size:26px;margin-bottom:16px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.fg .card{margin:0}.fi{font-size:30px}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.plan{margin:0;display:flex;flex-direction:column;gap:6px}.plan.hot{border:2px solid var(--ac)}.price{font-size:30px;font-weight:800}.plan ul{padding-left:18px;flex:1;margin:8px 0}
+.badge{display:inline-block;background:var(--ac2);color:var(--ac);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}.faq summary{font-weight:600;cursor:pointer}
+.foot{margin:40px 0 20px;text-align:center;color:var(--mut);font-size:13px}.foot a,.legal a{color:var(--ac)}
+.legal{max-width:760px;margin:0 auto}.legal h3{margin-top:20px}
+a{color:var(--ac)}.chips{display:flex;gap:8px;overflow-x:auto;margin:0 0 14px;padding-bottom:4px;scrollbar-width:none}.ch{flex:none;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px inherit;cursor:pointer}.ch.on{background:var(--ac);color:var(--onac);border-color:var(--ac)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
 @media print{#app,#toast{display:none!important}#pv{display:block}body{background:#fff}}
 </style></head><body><div class="wrap" id="app"></div><div id="pv"></div><div id="toast"></div>
@@ -96,7 +105,12 @@ item:['Barang/jasa','Item'],qty:['Jml','Qty'],price:['Harga','Price'],tax:['Paja
 company:['Nama usaha','Business name'],logo:['Logo','Logo'],invite:['Undang','Invite'],role:['Peran','Role'],pending:['menunggu','pending'],remove:['Hapus','Remove'],save:['Simpan','Save'],ws:['Nama buku','Book name'],
 ro:['Akun Anda hanya bisa melihat (viewer).','Your account is view-only (viewer).'],onlyowner:['Hanya owner yang bisa mengelola tim. Peran Anda:','Only the owner can manage the team. Your role:'],
 inve:['Undangan aktif saat orang itu masuk dengan email tersebut. Jalankan schema-v2.sql dulu.','The invite activates when that person signs in with that email. Run schema-v2.sql first.'],
-a2200:['Utang pajak','Tax payable'],theme:['Tema tampilan','Theme'],th_biru:['Biru','Blue'],th_hijau:['Hijau','Green'],th_gelap:['Gelap','Dark'],th_emas:['Emas','Gold'],prof:['Profil','Profile'],myprof:['Profil saya','My profile'],photo:['Ganti foto','Change photo'],pname:['Nama tampilan','Display name'],
+a2200:['Utang pajak','Tax payable'],cfg:['Pengaturan','Settings'],c_prof:['Profil','Profile'],c_team:['Tim','Team'],c_sec:['Keamanan','Security'],c_bhs:['Bahasa','Language'],c_mc:['Mata uang','Currency'],c_out:['Keluar','Log out'],
+terms:['Syarat Layanan','Terms of Service'],privacy:['Kebijakan Privasi','Privacy Policy'],eff:['Berlaku sejak','Effective'],l_agree:['Dengan masuk, Anda menyetujui','By continuing, you agree to the'],l_and:['dan','and'],
+l_badge:['Pembukuan untuk usaha kecil dan menengah','Bookkeeping for small businesses'],l_h:['Pembukuan rapi, laporan siap kapan saja','Tidy books, reports whenever you need them'],
+l_p:['Catat jurnal, buat faktur, dan pantau laporan dalam Rupiah, Ringgit, dan US Dollar. Aman, mudah, dan bisa dipakai bersama tim.','Record journals, issue invoices, and track reports in Rupiah, Ringgit, and US Dollar. Secure, simple, and ready for your team.'],
+l_cta:['Daftar gratis','Start free'],l_f:['Semua yang Anda butuhkan','Everything you need'],l_pl:['Pilih paket','Choose a plan'],l_pop:['Terpopuler','Most popular'],l_soon:['Langganan berbayar dibuka bertahap.','Paid plans open gradually.'],
+l_lang:['Empat bahasa tersedia. Sebagian label baru di 中文 dan العربية masih tampil dalam bahasa Inggris.','Four languages available. Some newer labels in 中文 and العربية still appear in English.'],theme:['Tema tampilan','Theme'],th_biru:['Biru','Blue'],th_hijau:['Hijau','Green'],th_gelap:['Gelap','Dark'],th_emas:['Emas','Gold'],prof:['Profil','Profile'],myprof:['Profil saya','My profile'],photo:['Ganti foto','Change photo'],pname:['Nama tampilan','Display name'],
 bprof:['Profil usaha (tampil di faktur dan laporan)','Business profile (shown on invoices and reports)'],addr:['Alamat','Address'],phone:['Telepon','Phone'],taxid:['No. pajak (NPWP/SSM)','Tax ID'],
 saved:['Tersimpan','Saved'],badimg:['Gambar tidak bisa dibaca. Coba JPG atau PNG.','Could not read the image. Try a JPG or PNG.'],profErr:['Profil belum tersimpan. Jalankan schema-v3.sql dulu.','Profile not saved. Run schema-v3.sql first.'],
 acctsec:['Keamanan akun','Account security'],npw:['Kata sandi baru','New password'],npw2:['Ulangi kata sandi','Repeat password'],chpw:['Ubah kata sandi','Change password'],outall:['Keluar dari semua perangkat','Sign out everywhere'],
@@ -109,7 +123,7 @@ a1100:['Kas & Bank','Cash & Bank','现金及银行','النقد والبنك'],a
 a2100:['Utang usaha','Accounts payable','应付账款','الذمم الدائنة'],a3100:['Modal pemilik','Owner capital','所有者资本','رأس المال'],
 a4100:['Pendapatan jasa','Service revenue','服务收入','إيرادات الخدمات'],a5100:['Beban gaji','Payroll expense','工资费用','مصروف الرواتب'],
 a5200:['Beban sewa','Rent expense','租金费用','مصروف الإيجار']};
-let th='biru',me={},prof={},gm={},sb,ws,ver=0,role='owner',rec=false,busy=false,msg='',li=0,st,disp='IDR',tab='dash',idle,fails=0,until=0;
+let view='land',vb='land',cs='prof',th='biru',me={},prof={},gm={},sb,ws,ver=0,role='owner',rec=false,busy=false,msg='',li=0,st,disp='IDR',tab='dash',idle,fails=0,until=0;
 const t=k=>{const a=S[k]||[k];return a[li]??a[1]??a[0]};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const b64=b=>{let s='';for(const x of new Uint8Array(b))s+=String.fromCharCode(x);return btoa(s)},ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -147,7 +161,7 @@ else if(mode==='f')r=await sb.auth.resetPasswordForEmail(e,{redirectTo:RED});
 else if(mode==='n'){r=await sb.auth.updateUser({password:p});if(!r.error){rec=false;await load();return}}
 if(r&&r.error){m.textContent=r.error.message;return}
 if(mode==='up'||mode==='f')m.textContent=t('sent')}
-async function lockNow(){clearTimeout(idle);st=null;if(sb)await sb.auth.signOut();draw()}
+async function lockNow(){clearTimeout(idle);st=null;view='land';tab='dash';if(sb)await sb.auth.signOut();draw()}
 function ping(){clearTimeout(idle);idle=setTimeout(lockNow,300000)}
 ['click','keydown','pointerdown'].forEach(e=>addEventListener(e,()=>st&&ping()));
 const conv=(v,from,to)=>v*st.rates[from]/st.rates[to];
@@ -187,12 +201,12 @@ const{error}=await sb.from('invites').insert({workspace_id:ws,email:e,role:$('#i
 async function delInv(id){await sb.from('invites').delete().eq('id',id);teamLoad()}
 async function rmMem(u){await sb.from('members').delete().eq('workspace_id',ws).eq('user_id',u);teamLoad()}
 async function renWs(){const n=$('#wn').value.trim().slice(0,80);if(!n)return;await sb.from('workspaces').update({name:n}).eq('id',ws);const x=mem.find(x=>x.workspace_id===ws);if(x)x.workspaces={name:n};draw()}
-const IC={dash:'📊',rep:'📑',gl:'📚',jrn:'✍️',inv:'🧾',bank:'🏦',aut:'🔁',team:'👥',prof:'👤',set:'🔒'};
+const IC={dash:'📊',rep:'📑',gl:'📚',jrn:'✍️',inv:'🧾',bank:'🏦',aut:'🔁',team:'👥',prof:'👤',set:'🔒',cfg:'⚙️'};
 function setTheme(k){th=k;savePref();draw()}
 const dispName=()=>prof.name||gm.full_name||gm.name||me.email||'';
 const avSrc=()=>prof.avatar||gm.avatar_url||gm.picture||'';
 const avatarHtml=(n=32)=>{const a=avSrc();return a?`<img src="${esc(a)}" referrerpolicy="no-referrer" alt="" style="width:${n}px;height:${n}px;border-radius:50%;object-fit:cover">`:`<span style="width:${n}px;height:${n}px;border-radius:50%;background:var(--ac);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600">${esc((dispName()[0]||'?').toUpperCase())}</span>`};
-const meChip=()=>`<span style="display:inline-flex;align-items:center;gap:6px;cursor:pointer" onclick="tab='prof';draw()">${avatarHtml(30)}<span class="mut" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(dispName())}</span></span>`;
+const meChip=()=>`<span style="display:inline-flex;align-items:center;gap:6px;cursor:pointer" onclick="tab='cfg';cs='prof';draw()">${avatarHtml(30)}<span class="mut" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(dispName())}</span></span>`;
 const coBlock=()=>{const c=st.coInfo||{};return`<p><b>${esc(st.co||'')}</b><br>${esc(c.addr||'')}<br>${esc(c.phone||'')} ${esc(c.tax||'')}</p>`};
 function fixCur(){const u=new Set([...st.entries.map(e=>e.cur),...st.rules.map(r=>r.cur),...st.invoices.map(v=>v.cur)]);for(const c of Object.keys(st.rates))if(!['IDR','MYR','USD'].includes(c)&&!u.has(c))delete st.rates[c];st.rates.IDR=1;st.rates.MYR??=3800;st.rates.USD??=16000;if(!st.rates[disp])disp='IDR'}
 async function loadProfile(){try{const{data:u}=await sb.auth.getUser();const x=(u&&u.user)||{};me={id:x.id,email:x.email};gm=x.user_metadata||{};
@@ -223,6 +237,65 @@ $('#pv').innerHTML=`<div style="padding:24px;max-width:800px;margin:auto"><div s
 const qq=x=>{x=String(x);if(/^[=+\-@]/.test(x))x="'"+x;return'"'+x.replace(/"/g,'""')+'"'};
 function exportTB(){const b=bals(),rows=[['code','name','debit','credit']];st.accts.forEach(a=>{const v=conv(b[a.c],'IDR',disp);rows.push([a.c,nm(a),v>0?v.toFixed(2):'',v<0?(-v).toFixed(2):''])});
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(qq).join(',')).join('\n')],{type:'text/csv'}));a.download='neraca-saldo-'+disp+'.csv';a.click()}
+const KONTAK='[isi email kontak]',OWNER='[isi nama pemilik/usaha]',LEGAL_DRAFT=true;
+const L2=a=>a[li===0?0:1];
+const LOGO='<svg width="30" height="30" viewBox="0 0 30 30"><rect width="30" height="30" rx="9" fill="var(--ac)"/><path d="M9 9h12L9 21h12" stroke="var(--onac)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const FEATS=[['✍️',['Jurnal dan buku besar','Journal and ledger'],['Jurnal multi-baris yang tidak bisa diubah, koreksi lewat jurnal balik, dan buku besar per akun.','Multi-line immutable journal, corrections by reversal, and a ledger per account.']],
+['🧾',['Faktur profesional','Professional invoices'],['Banyak item, pajak, nomor otomatis, logo usaha, dan cetak atau simpan sebagai PDF.','Multiple items, tax, automatic numbering, your logo, and print or save as PDF.']],
+['📊',['Laporan lengkap','Complete reports'],['Neraca saldo, laba rugi, posisi keuangan, dan arus kas, bisa dicetak atau diekspor.','Trial balance, income statement, balance sheet, and cash flow, printable and exportable.']],
+['💱',['Multi mata uang','Multi-currency'],['Rupiah, Ringgit Malaysia, dan US Dollar dengan kurs yang bisa Anda atur.','Rupiah, Malaysian Ringgit, and US Dollar with exchange rates you control.']],
+['👥',['Tim dan peran','Team and roles'],['Undang anggota sebagai owner, editor, atau viewer, dan kelola akses kapan saja.','Invite members as owner, editor, or viewer, and manage access any time.']],
+['🔁',['Otomatisasi','Automation'],['Jurnal berulang seperti sewa atau gaji tercatat sendiri saat jatuh tempo.','Recurring entries such as rent or payroll post themselves when due.']],
+['🏦',['Rekonsiliasi bank','Bank reconciliation'],['Cocokkan mutasi bank dengan catatan kas untuk menemukan selisih.','Match bank lines with your cash records to find differences.']],
+['🔒',['Aman','Secure'],['Login Google atau email terverifikasi, akses per pengguna, dan rantai audit untuk setiap jurnal.','Google or verified email sign-in, per-user access, and an audit chain for every entry.']]];
+/* UBAH HARGA DAN FITUR PAKET DI SINI */
+const PLANS=[{n:'Gratis',p:'Rp 0',per:['selamanya','forever'],f:[['1 buku usaha','1 business book'],['Jurnal, buku besar, dan laporan','Journal, ledger, and reports'],['3 mata uang','3 currencies'],['Cetak faktur','Invoice printing']]},
+{n:'Pro',p:'Rp 49.000',per:['per bulan','per month'],hot:1,soon:1,f:[['Semua fitur Gratis','Everything in Free'],['Tim dengan peran owner, editor, viewer','Team with owner, editor, viewer roles'],['Rekonsiliasi dan jurnal berulang','Reconciliation and recurring entries'],['Dukungan prioritas','Priority support']]},
+{n:'Bisnis',p:'Rp 99.000',per:['per bulan','per month'],soon:1,f:[['Semua fitur Pro','Everything in Pro'],['Beberapa buku usaha','Multiple business books'],['Anggota tim lebih banyak','More team members'],['Ekspor lanjutan','Advanced export']]}];
+const FAQ=[[['Apakah data saya aman?','Is my data safe?'],['Login memakai Google atau email terverifikasi, data tersimpan di server dengan aturan akses per pengguna, dan setiap jurnal tercatat dalam rantai audit. Tidak ada sistem yang 100% aman, jadi simpan cadangan laporan penting.','Sign-in uses Google or verified email, data is stored on servers with per-user access rules, and every entry is recorded in an audit chain. No system is 100% secure, so keep backups of important reports.']],
+[['Apakah ini pengganti akuntan?','Does this replace an accountant?'],['Tidak. Zui Akuntansi membantu pencatatan dan laporan. Untuk pajak dan keputusan akuntansi penting, konsultasikan dengan profesional.','No. Zui Akuntansi helps with record-keeping and reports. For tax and major accounting decisions, consult a professional.']],
+[['Bagaimana cara berhenti berlangganan?','How do I cancel?'],['Anda bisa berhenti kapan saja. Akses berbayar tetap berlaku sampai akhir periode yang sudah dibayar. Rinciannya ada di Syarat Layanan.','You can cancel any time. Paid access stays until the end of the period already paid. Details are in the Terms of Service.']],
+[['Mata uang apa yang didukung?','Which currencies are supported?'],['Rupiah (Rp), Ringgit Malaysia (RM), dan US Dollar (US$). Kurs diatur secara manual.','Rupiah (Rp), Malaysian Ringgit (RM), and US Dollar (US$). Rates are set manually.']]];
+function landing(sel){const go='onclick="view=\'auth\';draw()"';
+$('#app').innerHTML=`<div class="lnav"><h1 style="display:flex;gap:8px;align-items:center;margin:0;font-size:20px">${LOGO} Zui Akuntansi</h1><div class="row" style="align-items:center">${sel}<button class="b g" ${go}>${t('signin')}</button><button class="b" ${go}>${t('l_cta')}</button></div></div>
+<section class="hero"><span class="badge">${t('l_badge')}</span><h1>${t('l_h')}</h1><p>${t('l_p')}</p><button class="b" style="padding:14px 26px;font-size:17px" ${go}>${t('l_cta')}</button></section>
+<section class="sec"><h2>${t('l_f')}</h2><div class="fg">${FEATS.map(x=>`<div class="card"><div class="fi">${x[0]}</div><h3>${L2(x[1])}</h3><p class="mut">${L2(x[2])}</p></div>`).join('')}</div><p class="mut" style="text-align:center;font-size:13px;margin-top:12px">${t('l_lang')}</p></section>
+<section class="sec"><h2>${t('l_pl')}</h2><div class="plans">${PLANS.map(p=>`<div class="card plan ${p.hot?'hot':''}">${p.hot?`<span class="badge" style="align-self:flex-start">${t('l_pop')}</span>`:''}<h3 style="margin:0">${p.n}</h3><div class="price">${p.p}</div><small>${L2(p.per)}</small><ul>${p.f.map(x=>`<li>${L2(x)}</li>`).join('')}</ul><button class="b ${p.hot?'':'g'}" ${go}>${t('l_cta')}</button>${p.soon?`<small style="margin-top:6px">${t('l_soon')}</small>`:''}</div>`).join('')}</div></section>
+<section class="sec faq"><h2>FAQ</h2>${FAQ.map(q=>`<details><summary>${L2(q[0])}</summary><p class="mut">${L2(q[1])}</p></details>`).join('')}</section>
+<div class="foot"><p><a href="#" onclick="openLegal('terms','land');return false">${t('terms')}</a> · <a href="#" onclick="openLegal('privacy','land');return false">${t('privacy')}</a></p><p>© ${new Date().getFullYear()} Zui Akuntansi · ${esc(KONTAK)}</p></div>`}
+function openLegal(k,from){view=k;vb=from;window.scrollTo(0,0);draw()}
+const TERMS=[['1. Penerimaan Syarat','Dengan membuat akun atau memakai Zui Akuntansi (“Layanan”), Anda menyetujui Syarat Layanan ini. Layanan dikelola oleh {O} (“Kami”). Jika tidak setuju, jangan gunakan Layanan.'],
+['2. Tentang Layanan','Zui Akuntansi adalah alat bantu pencatatan keuangan. Layanan bukan nasihat akuntansi, pajak, hukum, atau investasi. Anda bertanggung jawab atas ketepatan data, perhitungan, dan kepatuhan pajak usaha Anda.'],
+['3. Akun dan keamanan','Anda wajib memberi data yang benar, menjaga kerahasiaan kata sandi, dan bertanggung jawab atas semua aktivitas di akun Anda, termasuk anggota tim yang Anda undang. Segera hubungi Kami jika akun disalahgunakan.'],
+['4. Data Anda','Data pembukuan tetap milik Anda. Anda memberi Kami izin terbatas untuk menyimpan dan memprosesnya hanya untuk menjalankan Layanan. Anda dapat mengekspor data dan meminta penghapusan akun.'],
+['5. Paket dan pembayaran','Layanan menyediakan paket gratis dan berbayar. Harga, batas fitur, dan periode tagihan ditampilkan sebelum Anda membayar. Setelah fitur berbayar tersedia, langganan diperpanjang otomatis sesuai periodenya sampai dibatalkan. Pajak yang berlaku dapat ditambahkan. Pembayaran diproses penyedia pembayaran pihak ketiga.'],
+['6. Pembatalan dan pengembalian dana','Anda dapat membatalkan kapan saja. Akses berbayar tetap berlaku sampai akhir periode yang sudah dibayar. Pembayaran yang sudah dilakukan pada dasarnya tidak dikembalikan, kecuali diwajibkan hukum atau disetujui Kami secara tertulis.'],
+['7. Penggunaan yang dilarang','Anda dilarang melanggar hukum, mengunggah kode berbahaya, mengganggu keamanan Layanan, mengakses data pengguna lain tanpa izin, atau menjual kembali Layanan tanpa persetujuan tertulis Kami.'],
+['8. Ketersediaan dan perubahan','Kami berupaya menjaga Layanan tetap berjalan tetapi tidak menjamin bebas gangguan. Kami dapat mengubah fitur atau harga dengan pemberitahuan yang wajar. Perubahan harga berlaku pada periode tagihan berikutnya.'],
+['9. Batasan tanggung jawab','Sejauh diizinkan hukum, Layanan disediakan “apa adanya”. Kami tidak bertanggung jawab atas kerugian tidak langsung atau hilangnya keuntungan, dan total tanggung jawab Kami dibatasi sebesar biaya yang Anda bayar dalam 12 bulan terakhir. Simpan cadangan data penting Anda.'],
+['10. Penghentian','Kami dapat menangguhkan atau menutup akun yang melanggar Syarat ini. Anda dapat berhenti memakai Layanan kapan saja.'],
+['11. Hukum yang berlaku dan kontak','Syarat ini tunduk pada hukum Republik Indonesia. Pertanyaan dapat dikirim ke {K}.'],
+['12. Perubahan Syarat','Kami dapat memperbarui Syarat ini. Penggunaan Layanan setelah perubahan berarti Anda menerima Syarat yang baru.']];
+const PRIV=[['1. Data yang kami kumpulkan','Data akun (email, nama, foto profil dari Google atau yang Anda unggah), data pembukuan yang Anda masukkan (jurnal, faktur, nama pelanggan, profil usaha), preferensi (bahasa, mata uang, tema), serta data teknis dasar seperti alamat IP dan jenis perangkat yang dicatat penyedia infrastruktur.'],
+['2. Cara kami menggunakan data','Untuk menjalankan Layanan, mengautentikasi Anda, menjaga keamanan, memberi dukungan, dan memperbaiki Layanan. Kami tidak menjual data pribadi Anda.'],
+['3. Pihak ketiga','Kami memakai Supabase (database dan autentikasi, server di Singapura), Google (login), layanan hosting situs, layanan pengirim email, dan penyedia pembayaran saat fitur berbayar tersedia. Halaman ini juga memuat font dari Google Fonts. Pihak-pihak tersebut memproses data sesuai kebijakan masing-masing.'],
+['4. Penyimpanan di perangkat','Aplikasi menyimpan preferensi (bahasa, mata uang, tema) di browser Anda. Kami tidak memakai iklan atau pelacak pihak ketiga.'],
+['5. Keamanan','Koneksi memakai HTTPS, akses data dibatasi per pengguna dengan aturan di tingkat database, dan jurnal dicatat dalam rantai audit. Tidak ada sistem yang sepenuhnya aman, dan Kami tidak dapat menjamin keamanan mutlak.'],
+['6. Penyimpanan dan penghapusan','Data disimpan selama akun aktif. Anda dapat meminta penghapusan akun dan data. Salinan cadangan dapat bertahan sementara sesuai kebijakan penyedia infrastruktur.'],
+['7. Berbagi dalam tim','Anggota tim yang Anda undang dapat melihat data buku sesuai perannya (owner, editor, viewer). Owner dapat mengelola dan menghapus akses anggota.'],
+['8. Hak Anda','Anda dapat meminta akses, koreksi, ekspor, atau penghapusan data, serta menarik persetujuan, sesuai peraturan perlindungan data pribadi yang berlaku. Hubungi {K}.'],
+['9. Anak-anak','Layanan ditujukan untuk pengguna dewasa dan pelaku usaha, bukan untuk anak di bawah umur.'],
+['10. Transfer data lintas negara','Data dapat diproses di server di luar negeri, termasuk Singapura, dan oleh penyedia layanan di negara lain.'],
+['11. Perubahan dan kontak','Kebijakan ini dapat diperbarui, dan tanggal berlaku akan diubah. Pertanyaan dapat dikirim ke {K}.']];
+function legal(){const T=view==='terms',D=T?TERMS:PRIV;
+$('#app').innerHTML=`<div class="legal"><button class="b g" onclick="view=vb;draw()">← ${t('back')}</button><h1 style="margin-top:14px">${T?t('terms'):t('privacy')}</h1><p class="mut">${t('eff')} 7 Oktober 2026${LEGAL_DRAFT?' · <b>Draf, belum ditinjau ahli hukum.</b>':''}</p>${D.map(([h,p])=>`<h3>${esc(h)}</h3><p>${esc(p.replace(/\{O\}/g,OWNER).replace(/\{K\}/g,KONTAK))}</p>`).join('')}</div>`}
+let cs0=0;
+const bhsTab=()=>`<div class="card"><h3>${t('c_bhs')}</h3><div class="row">${['Indonesia','English','中文','العربية'].map((x,k)=>`<button class="b ${li===k?'':'g'}" onclick="setLang(${k})">${x}</button>`).join('')}</div><p class="mut" style="font-size:13px">${t('l_lang')}</p></div>`;
+const curTab=()=>`<div class="card"><h3>${t('c_mc')}</h3><div class="row"><label>${t('disp')}<select onchange="setDisp(this.value)">${opt(curs(),disp)}</select></label></div></div>${RATES()}`;
+const RATES=()=>`<div class="card"><h3>${t('rate')}</h3><div class="row">${Object.keys(st.rates).filter(c=>c!=='IDR').map(c=>`<label>${c}<input type="number" min="0" step="any" value="${st.rates[c]}" style="width:110px" onchange="setRate('${c}',this.value)"></label>`).join('')}</div></div>`;
+const outTab=()=>`<div class="card"><h3>${t('c_out')}</h3><p class="mut">${me.email?esc(me.email):''}</p><div class="row"><button class="b" onclick="lockNow()">${t('c_out')}</button><button class="b g" onclick="outAll()">${t('outall')}</button></div></div>`;
+function cfg(){const body={prof:profileTab,team:teamTab,sec:settings,bhs:bhsTab,mc:curTab,out:outTab}[cs]();
+return`<div class="chips">${[['prof','👤'],['team','👥'],['sec','🔒'],['bhs','🌐'],['mc','💱'],['out','🚪']].map(([k,e])=>`<button class="ch ${cs===k?'on':''}" onclick="cs='${k}';draw()">${e} ${t('c_'+k)}</button>`).join('')}</div>${body}<p class="mut" style="font-size:13px"><a href="#" onclick="openLegal('terms','land');return false" style="color:var(--ac)">${t('terms')}</a> · <a href="#" onclick="openLegal('privacy','land');return false" style="color:var(--ac)">${t('privacy')}</a></p>`}
 function report(){const b=bals(),D=c=>conv(c,'IDR',disp);
 const sum=ty=>st.accts.filter(a=>a.y===ty).reduce((s,a)=>s+b[a.c],0);
 const A=sum('A'),Li=-sum('Li'),E=-sum('E'),R=-sum('R'),X=sum('X'),N=R-X;
@@ -272,18 +345,20 @@ return`<div class="card"><h3>${t('rules')}</h3><p class="mut">${t('ruleh')}</p><
 async function addR(){const a=parseFloat($('#ra').value),d=$('#rd').value,c=$('#rc').value;if(!(a>0)||d===c)return;st.rules.push({desc:$('#rt').value.trim().slice(0,120)||'-',d,c,amt:a,cur:$('#rcu').value,every:Math.max(1,parseInt($('#re').value)||1),next:$('#rf').value||today()});await autorun();await save();draw()}
 async function delR(i){st.rules.splice(i,1);await save();draw()}
 function settings(){return`<div class="card"><h3>${t('acctsec')}</h3><div class="row"><label>${t('npw')}<input id="np1" type="password" autocomplete="new-password"></label><label>${t('npw2')}<input id="np2" type="password" autocomplete="new-password"></label><button class="b" onclick="chPw()">${t('chpw')}</button><button class="b g" onclick="outAll()">${t('outall')}</button></div><p class="mut">${t('pwh')}</p><p id="pe"></p></div><div class="card"><h3>${t('set')}</h3><p>${t('sec')}</p><div class="row"><button class="b" onclick="verify()">${t('verify')}</button><button class="b g" onclick="exportCsv()">${t('exp')}</button><button class="b g" onclick="wipe()">${t('wipe')}</button></div><p id="vr"></p></div>
-<div class="card"><h3>${t('rate')}</h3><div class="row">${Object.keys(st.rates).filter(c=>c!=='IDR').map(c=>`<label>${c}<input type="number" min="0" step="any" value="${st.rates[c]}" style="width:110px" onchange="setRate('${c}',this.value)"></label>`).join('')}</div></div>`}
+`}
 async function setRate(c,v){v=parseFloat(v);if(v>0){st.rates[c]=v;await save()}}
 async function verify(){let prev='0';for(const e of st.entries){const h=await sha(prev+JSON.stringify([e.id,e.date,e.desc,e.cur,e.rate,e.lines]));if(e.prev!==prev||e.hash!==h){$('#vr').innerHTML=`<span class="bad">${t('tamp')}${e.id}</span>`;return}prev=e.hash}
 $('#vr').innerHTML=`<span class="ok">${t('good')} ${st.entries.length}</span>`}
 async function wipe(){if(confirm('?')){st=seed();await save();draw()}}
 function draw(){document.documentElement.dataset.th=th;document.documentElement.lang=L[li];document.documentElement.dir=li===3?'rtl':'ltr';
 const sel=`<select aria-label="language" onchange="setLang(+this.value)">${[['0','Indonesia'],['1','English'],['2','中文'],['3','العربية']].map(([v,l])=>`<option value="${v}"${+v===li?' selected':''}>${l}</option>`).join('')}</select>`;
+if(view==='terms'||view==='privacy'){legal();return}
+if(!st&&view==='land'&&!rec&&!msg){landing(sel);return}
 if(!st){const bt=(m,l,c='')=>`<button class="b ${c}" onclick="authGo('${m}')">${t(l)}</button>`;
 const body=!cfgOk()?`<p class="bad">${t('conf')}</p>`:rec?`<div class="row" style="flex-direction:column;align-items:stretch"><input id="pw" type="password" autocomplete="new-password" placeholder="${esc(t('newpw'))}"></div><p>${bt('n','setpw')}</p>`
 :`<p>${bt('g','google')}</p><div class="row" style="flex-direction:column;align-items:stretch"><input id="em" type="email" autocomplete="email" placeholder="${esc(t('email'))}"><input id="pw" type="password" autocomplete="current-password" placeholder="${esc(t('pw'))}" onkeydown="if(event.key==='Enter')authGo('in')"></div><p>${bt('in','signin')} ${bt('up','signup','g')} ${bt('f','forgot','g')}</p>`;
-$('#app').innerHTML=`<div class="card" id="lock"><h1>Zui Akuntansi</h1><p class="mut">${t('sub')}</p>${body}<p class="bad" id="m">${esc(msg)}</p><div>${sel}</div></div>`;return}
-const v={dash:dashboard,rep:report,gl:ledgerTab,jrn:journal,inv:invoices,bank:bank,aut:auto,team:teamTab,prof:profileTab,set:settings}[tab]();
-$('#app').innerHTML=`<header><h1 style="margin:0;display:flex;gap:8px;align-items:center"><svg width="30" height="30" viewBox="0 0 30 30"><rect width="30" height="30" rx="9" fill="var(--ac)"/><path d="M9 9h12L9 21h12" stroke="var(--onac)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Zui Akuntansi</h1><div class="row">${meChip()}${wsSel()}${sel}<button class="b g" onclick="lockNow()">${t('lock')}</button></div></header><div class="shell"><nav>${['dash','rep','gl','jrn','inv','bank','aut','team','prof','set'].map(k=>`<button class="${k===tab?'on':''}" onclick="tab='${k}';draw()">${IC[k]} ${t(k)}</button>`).join('')}</nav><main>${v}</main></div>`;if(tab==='team')teamLoad()}
+$('#app').innerHTML=`<div class="card" id="lock"><h1>Zui Akuntansi</h1><p class="mut">${t('l_badge')}</p>${body}<p class="bad" id="m">${esc(msg)}</p><p class="mut" style="font-size:13px">${t('l_agree')} <a href="#" onclick="openLegal('terms','auth');return false">${t('terms')}</a> ${t('l_and')} <a href="#" onclick="openLegal('privacy','auth');return false">${t('privacy')}</a>.</p><div class="row">${sel}<button class="b g" onclick="view='land';msg='';draw()">←</button></div></div>`;return}
+const v={dash:dashboard,rep:report,gl:ledgerTab,jrn:journal,inv:invoices,bank:bank,aut:auto,cfg:cfg}[tab]();
+$('#app').innerHTML=`<header><h1 style="margin:0;display:flex;gap:8px;align-items:center"><svg width="30" height="30" viewBox="0 0 30 30"><rect width="30" height="30" rx="9" fill="var(--ac)"/><path d="M9 9h12L9 21h12" stroke="var(--onac)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Zui Akuntansi</h1><div class="row">${meChip()}${wsSel()}</div></header><div class="shell"><nav>${['dash','rep','gl','jrn','inv','bank','aut','cfg'].map(k=>`<button class="${k===tab?'on':''}" onclick="tab='${k}';draw()">${IC[k]} ${t(k)}</button>`).join('')}</nav><main>${v}</main></div>`;if(tab==='cfg'&&cs==='team')teamLoad()}
 boot();
 </script></body></html>
